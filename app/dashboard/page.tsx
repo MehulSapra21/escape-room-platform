@@ -20,7 +20,8 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
   },
   'MILITARY BASE': { 
     'MIL789': { item: 'Stabilizing Isotope', isCritical: true },
-    'KEYCARD': { item: 'Access Card', isCritical: false }
+    'KEYCARD': { item: 'Access Card', isCritical: false },
+    'JACKET001': { item: 'Soldier Jacket', isCritical: false } // Added specific to Military Base
   },
   'SCIENTIST LAB': { 
     'LAB000': { item: 'Catalyst Enzyme', isCritical: true },
@@ -58,6 +59,11 @@ export default function DashboardPage() {
       }
 
       if (!data.current_room) {
+        // TEMPORARY OVERRIDE FOR TESTING: Force spawn into Military Base
+        const assignedRoom = 'MILITARY BASE';
+
+        /* 
+        // --- ORIGINAL LOAD BALANCER (Commented out for testing) ---
         const { data: allTeams } = await supabase.from('teams').select('current_room');
         const roomCounts = INITIAL_ROOMS.reduce((acc, room) => {
           acc[room] = 0;
@@ -79,6 +85,8 @@ export default function DashboardPage() {
             assignedRoom = room;
           }
         }
+        // ---------------------------------------------------------
+        */
 
         const { data: updatedData, error: updateError } = await supabase
           .from('teams')
@@ -302,7 +310,6 @@ export default function DashboardPage() {
       )}
 
       <div>
-        {/* Updated heading to match the large 3xl room text */}
         <h2 className="text-3xl font-black text-blue-500 mb-4 tracking-wider uppercase">INVENTORY</h2>
         <div className="grid grid-cols-4 gap-3">
           {inventorySlots.map((_, index) => {
@@ -310,7 +317,6 @@ export default function DashboardPage() {
             return (
               <div 
                 key={index} 
-                // Updated borders to border-2 and brighter blues
                 className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-2 text-center transition-all duration-500 ${
                   item 
                     ? 'bg-zinc-800/80 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.35)] scale-100' 
