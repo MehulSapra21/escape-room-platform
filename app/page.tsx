@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 
@@ -11,6 +11,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
+  // Reset the form and loading state every time this page mounts (e.g., after a logout)
+  useEffect(() => {
+    setLoading(false);
+    setTeamId('');
+    setPassword('');
+    setError(null);
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -20,6 +28,7 @@ export default function LoginPage() {
     if (teamId === 'admin' && password === '123') {
       localStorage.setItem('is_admin', 'true');
       router.push('/admin');
+      setTimeout(() => setLoading(false), 500); // Clean up in background
       return;
     }
 
@@ -44,6 +53,8 @@ export default function LoginPage() {
     } else {
       router.push('/standby');
     }
+    
+    setTimeout(() => setLoading(false), 500); // Clean up in background
   };
 
   return (
