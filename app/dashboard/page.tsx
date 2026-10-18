@@ -21,7 +21,8 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
   'MILITARY BASE': { 
     'MIL789': { item: 'Stabilizing Isotope', isCritical: true },
     'KEYCARD': { item: 'Access Card', isCritical: false },
-    'JACKET001': { item: 'Soldier Jacket', isCritical: false }
+    'JACKET001': { item: 'Soldier Jacket', isCritical: false },
+    'POSTER002': { item: 'Crime Scene Poster', isCritical: false }
   },
   'SCIENTIST LAB': { 
     'LAB000': { item: 'Catalyst Enzyme', isCritical: true },
@@ -31,10 +32,16 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
 
 const ITEM_IMAGES: Record<string, string> = {
   'Soldier Jacket': '/jacket.jpg',
+  'Crime Scene Poster': '/crime_scene_poster.jpg',
 };
 
 const EXAMINE_IMAGES: Record<string, string> = {
   'Soldier Jacket': '/soldier_note.jpg',
+};
+
+const POSTER_ANSWER_KEY: Record<string, string> = {
+  A: '7', B: '3', C: '11', D: '1', E: '9', F: '4',
+  G: '12', H: '2', I: '8', J: '6', K: '10', L: '5'
 };
 
 export default function DashboardPage() {
@@ -52,6 +59,11 @@ export default function DashboardPage() {
   const [examineImage, setExamineImage] = useState<string | null>(null);
   const [itemActionMessage, setItemActionMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Poster Puzzle State
+  const [showPosterPuzzle, setShowPosterPuzzle] = useState(false);
+  const [posterAnswers, setPosterAnswers] = useState<Record<string, string>>({});
+  const [posterMessage, setPosterMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -217,14 +229,21 @@ export default function DashboardPage() {
     setCodeLoading(false);
   };
 
-  // Inventory Action Handlers
   const handleExamine = () => {
     if (!selectedItem) return;
+
+    if (selectedItem === 'Crime Scene Poster') {
+      setShowPosterPuzzle(true);
+      setItemActionMessage(null);
+      setPosterMessage(null);
+      setPosterAnswers({});
+      return;
+    }
+
     const imageSrc = EXAMINE_IMAGES[selectedItem];
     if (imageSrc) {
       setExamineImage(imageSrc);
       setItemActionMessage(null);
-      // Auto-close examine view after 5 seconds
       setTimeout(() => {
         setExamineImage(null);
       }, 5000);
@@ -265,6 +284,29 @@ export default function DashboardPage() {
       setItemActionMessage("Database sync failed.");
     }
     setActionLoading(false);
+  };
+
+  const handlePosterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    let isCorrect = true;
+    for (const letter in POSTER_ANSWER_KEY) {
+      if (posterAnswers[letter] !== POSTER_ANSWER_KEY[letter]) {
+        isCorrect = false;
+        break;
+      }
+    }
+
+    if (isCorrect) {
+      setPosterMessage({ 
+        text: "7 may be a part of the key. The soldier hid a part of the key under the desk.", 
+        type: 'success' 
+      });
+    } else {
+      setPosterMessage({ 
+        text: "INCORRECT ANALYSIS. VERIFY YOUR PARTS.", 
+        type: 'error' 
+      });
+    }
   };
 
   const closeMenu = () => {
@@ -396,7 +438,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Item Interaction Menu Overlay */}
-      {selectedItem && !examineImage && (
+      {selectedItem && !examineImage && !showPosterPuzzle && (
         <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in">
             <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
@@ -439,7 +481,52 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Examine Image Overlay */}
+      {/* Poster Puzzle Form Overlay */}
+      {showPosterPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowPosterPuzzle(false); setPosterMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest">Analyze Image Parts</h3>
+            
+            {posterMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed ${posterMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {posterMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handlePosterSubmit}>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 mb-8">
+                {Object.keys(POSTER_ANSWER_KEY).map(letter => (
+                  <div key={letter} className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-zinc-400 uppercase">{letter}</label>
+                    <input 
+                      type="text" 
+                      maxLength={2}
+                      value={posterAnswers[letter] || ''}
+                      onChange={(e) => setPosterAnswers({...posterAnswers, [letter]: e.target.value.trim()})}
+                      className="bg-black border border-zinc-700 rounded-lg p-3 text-center text-white focus:border-blue-500 outline-none transition-colors font-mono"
+                    />
+                  </div>
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest"
+              >
+                VERIFY CONFIGURATION
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Examine Image Overlay (For other items) */}
       {examineImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-md">
           <div className="relative w-full h-full p-4 flex flex-col items-center justify-center animate-in zoom-in duration-300">
