@@ -97,6 +97,31 @@ export default function DashboardPage() {
     };
 
     initDashboard();
+
+    // BACKGROUND SYNC: Check for Admin Resets every 5 seconds
+    const syncInterval = setInterval(async () => {
+      const teamId = localStorage.getItem('team_id');
+      if (!teamId) return;
+
+      const { data, error } = await supabase
+        .from('teams')
+        .select('has_started, current_room')
+        .eq('id', teamId)
+        .single();
+
+      if (!error && data) {
+        // Detect Pure Reset (Team was sent back to standby)
+        if (!data.has_started) {
+          router.push('/standby');
+        }
+        // Detect Partial Reset (Team is active, but room was wiped)
+        else if (data.has_started && !data.current_room) {
+          window.location.reload();
+        }
+      }
+    }, 10000);
+
+    return () => clearInterval(syncInterval);
   }, [router]);
 
   const handleLogout = () => {
