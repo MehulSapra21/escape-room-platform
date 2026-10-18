@@ -16,7 +16,14 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    // Query Supabase for the team
+    // 1. Check for Admin Credentials
+    if (teamId === 'admin' && password === '123') {
+      localStorage.setItem('is_admin', 'true');
+      router.push('/admin');
+      return;
+    }
+
+    // 2. Normal Team Login Logic
     const { data, error: dbError } = await supabase
       .from('teams')
       .select('*')
@@ -30,15 +37,11 @@ export default function LoginPage() {
       return;
     }
 
-    // Store team UUID in local storage to track session
     localStorage.setItem('team_id', data.id);
     
-    // Check if the team has already started the event
     if (data.has_started || data.current_room) {
-      // Team is reconnecting mid-game, skip standby and intro video
       router.push('/dashboard');
     } else {
-      // First-time login, send to standby gate
       router.push('/standby');
     }
   };
