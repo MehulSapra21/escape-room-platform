@@ -22,7 +22,8 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
     'MIL789': { item: 'Stabilizing Isotope', isCritical: true },
     'KEYCARD': { item: 'Access Card', isCritical: false },
     'JACKET001': { item: 'Soldier Jacket', isCritical: false },
-    'POSTER002': { item: 'Crime Scene Poster', isCritical: false }
+    'POSTER002': { item: 'Crime Scene Poster', isCritical: false },
+    'COMPONENT-C-003': { item: 'Component-C Box', isCritical: false }
   },
   'SCIENTIST LAB': { 
     'LAB000': { item: 'Catalyst Enzyme', isCritical: true },
@@ -33,6 +34,8 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
 const ITEM_IMAGES: Record<string, string> = {
   'Soldier Jacket': '/jacket.jpg',
   'Crime Scene Poster': '/crime_scene_poster.jpg',
+  'Component-C Box': '/component_c_box.jpg',
+  'Component C': '/component_c.jpg',
 };
 
 const EXAMINE_IMAGES: Record<string, string> = {
@@ -43,6 +46,8 @@ const POSTER_ANSWER_KEY: Record<string, string> = {
   A: '7', B: '3', C: '11', D: '1', E: '9', F: '4',
   G: '12', H: '2', I: '8', J: '6', K: '10', L: '5'
 };
+
+const BOX_PASSCODE = '4716';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -64,6 +69,12 @@ export default function DashboardPage() {
   const [showPosterPuzzle, setShowPosterPuzzle] = useState(false);
   const [posterAnswers, setPosterAnswers] = useState<Record<string, string>>({});
   const [posterMessage, setPosterMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+
+  // Box Puzzle State
+  const [showBoxPuzzle, setShowBoxPuzzle] = useState(false);
+  const [boxCodeArr, setBoxCodeArr] = useState(['', '', '', '']);
+  const [boxMessage, setBoxMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [boxLoading, setBoxLoading] = useState(false);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -240,6 +251,14 @@ export default function DashboardPage() {
       return;
     }
 
+    if (selectedItem === 'Component-C Box') {
+      setShowBoxPuzzle(true);
+      setItemActionMessage(null);
+      setBoxMessage(null);
+      setBoxCodeArr(['', '', '', '']);
+      return;
+    }
+
     const imageSrc = EXAMINE_IMAGES[selectedItem];
     if (imageSrc) {
       setExamineImage(imageSrc);
@@ -259,8 +278,12 @@ export default function DashboardPage() {
   const handleDiscard = async () => {
     if (!team || !selectedItem) return;
 
-    const hasClearedMilitaryBase = team.visited_rooms?.includes('MILITARY BASE');
+    if (selectedItem === 'Component-C Box' || selectedItem === 'Component C') {
+      setItemActionMessage("This item can not be discarded in any way.");
+      return;
+    }
 
+    const hasClearedMilitaryBase = team.visited_rooms?.includes('MILITARY BASE');
     if (!hasClearedMilitaryBase) {
       setItemActionMessage("This item can not be discarded right now.");
       return;
@@ -307,6 +330,83 @@ export default function DashboardPage() {
         type: 'error' 
       });
     }
+  };
+
+  const handleBoxChange = (index: number, value: string) => {
+    if (!/^[0-9]*$/.test(value)) return;
+    const newArr = [...boxCodeArr];
+    newArr[index] = value.slice(-1);
+    setBoxCodeArr(newArr);
+    
+    if (value && index < 3) {
+      document.getElementById(`box-input-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleBoxSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const enteredCode = boxCodeArr.join('');
+    
+    if (enteredCode !== BOX_PASSCODE) {
+      setBoxMessage({ text: "ACCESS DENIED. INVALID PASSCODE.", type: "error" });
+      return;
+    }
+
+    setBoxLoading(true);
+    
+    // Replace the Box with the actual Component C
+    const newInventory = team.inventory.filter((i: string) => i !== 'Component-C Box');
+    newInventory.push('Component C');
+
+    // Because Component C is the critical item for this room, we trigger the room progression
+    const newVisitedRooms = [...(team.visited_rooms || []), team.current_room];
+    const remainingRooms = INITIAL_ROOMS.filter(r => !newVisitedRooms.includes(r));
+    let nextRoom = FINAL_ROOM;
+
+    if (remainingRooms.length > 0) {
+      const { data: allTeams } = await supabase.from('teams').select('current_room');
+      const roomCounts = remainingRooms.reduce((acc, room) => {
+        acc[room] = 0;
+        return acc;
+      }, {} as Record<string, number>);
+
+      allTeams?.forEach((t) => {
+        if (t.current_room && roomCounts[t.current_room] !== undefined) {
+          roomCounts[t.current_room]++;
+        }
+      });
+
+      nextRoom = remainingRooms[0];
+      let minCount = roomCounts[nextRoom];
+      
+      for (const room of remainingRooms) {
+        if (roomCounts[room] < minCount) {
+          minCount = roomCounts[room];
+          nextRoom = room;
+        }
+      }
+    }
+
+    const { data: updatedTeam, error: updateError } = await supabase
+      .from('teams')
+      .update({
+        inventory: newInventory,
+        visited_rooms: newVisitedRooms,
+        current_room: nextRoom
+      })
+      .eq('id', team.id)
+      .select()
+      .single();
+
+    if (!updateError && updatedTeam) {
+      setTeam(updatedTeam);
+      setShowBoxPuzzle(false);
+      setSelectedItem(null);
+      setMessage({ text: `CRITICAL ITEM ACQUIRED: Component C. Routing to next sector...`, type: "success" });
+    } else {
+      setBoxMessage({ text: "Database sync failed. Try again.", type: "error" });
+    }
+    setBoxLoading(false);
   };
 
   const closeMenu = () => {
@@ -438,7 +538,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Item Interaction Menu Overlay */}
-      {selectedItem && !examineImage && !showPosterPuzzle && (
+      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && (
         <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in">
             <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
@@ -481,10 +581,55 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Component-C Box 4-Digit Lock Overlay */}
+      {showBoxPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
+            <button 
+              onClick={() => { setShowBoxPuzzle(false); setBoxMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center">Enter Passcode</h3>
+            
+            {boxMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${boxMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {boxMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleBoxSubmit}>
+              <div className="flex justify-center gap-3 mb-8">
+                {boxCodeArr.map((digit, index) => (
+                  <input 
+                    key={index}
+                    id={`box-input-${index}`}
+                    type="text" 
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleBoxChange(index, e.target.value)}
+                    className="w-14 h-16 bg-black border-2 border-zinc-700 rounded-lg text-center text-white text-3xl font-bold focus:border-red-500 outline-none transition-colors font-mono shadow-inner"
+                  />
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={boxLoading}
+                className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {boxLoading ? 'DECRYPTING...' : 'UNLOCK BOX'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Poster Puzzle Form Overlay */}
       {showPosterPuzzle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-2xl p-6 relative animate-in zoom-in my-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-2xl p-6 relative animate-in zoom-in my-auto mt-20 sm:mt-auto">
             <button 
               onClick={() => { setShowPosterPuzzle(false); setPosterMessage(null); }} 
               className="absolute top-4 right-4 text-zinc-500 hover:text-white"
