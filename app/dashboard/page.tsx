@@ -21,12 +21,18 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
   'MILITARY BASE': { 
     'MIL789': { item: 'Stabilizing Isotope', isCritical: true },
     'KEYCARD': { item: 'Access Card', isCritical: false },
-    'JACKET001': { item: 'Soldier Jacket', isCritical: false } // Added specific to Military Base
+    'JACKET001': { item: 'Soldier Jacket', isCritical: false }
   },
   'SCIENTIST LAB': { 
     'LAB000': { item: 'Catalyst Enzyme', isCritical: true },
     'NOTES55': { item: 'Research Logs', isCritical: false }
   },
+};
+
+// Map item names exactly as they appear in ROOM_CODES to their image files in the public folder
+const ITEM_IMAGES: Record<string, string> = {
+  'Soldier Jacket': '/jacket.jpg',
+  // You can add more images here later, e.g., 'Viral Culture': '/culture.jpg'
 };
 
 export default function DashboardPage() {
@@ -59,35 +65,7 @@ export default function DashboardPage() {
       }
 
       if (!data.current_room) {
-        // TEMPORARY OVERRIDE FOR TESTING: Force spawn into Military Base
         const assignedRoom = 'MILITARY BASE';
-
-        /* 
-        // --- ORIGINAL LOAD BALANCER (Commented out for testing) ---
-        const { data: allTeams } = await supabase.from('teams').select('current_room');
-        const roomCounts = INITIAL_ROOMS.reduce((acc, room) => {
-          acc[room] = 0;
-          return acc;
-        }, {} as Record<string, number>);
-
-        allTeams?.forEach((t) => {
-          if (t.current_room && roomCounts[t.current_room] !== undefined) {
-            roomCounts[t.current_room]++;
-          }
-        });
-
-        let assignedRoom = INITIAL_ROOMS[0];
-        let minCount = roomCounts[assignedRoom];
-        
-        for (const room of INITIAL_ROOMS) {
-          if (roomCounts[room] < minCount) {
-            minCount = roomCounts[room];
-            assignedRoom = room;
-          }
-        }
-        // ---------------------------------------------------------
-        */
-
         const { data: updatedData, error: updateError } = await supabase
           .from('teams')
           .update({ current_room: assignedRoom, has_started: true })
@@ -314,24 +292,35 @@ export default function DashboardPage() {
         <div className="grid grid-cols-4 gap-3">
           {inventorySlots.map((_, index) => {
             const item = currentInventory[index];
+            const hasImage = item && ITEM_IMAGES[item];
+
             return (
               <div 
                 key={index} 
-                className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-2 text-center transition-all duration-500 ${
+                className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-1 text-center transition-all duration-500 overflow-hidden ${
                   item 
                     ? 'bg-zinc-800/80 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.35)] scale-100' 
                     : 'bg-black border-blue-800/60 scale-95'
                 }`}
               >
                 {item ? (
-                  <>
-                    <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mb-1">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
-                    </div>
-                    <span className="text-[9px] font-bold text-blue-400 tracking-wider uppercase truncate w-full">
-                      {item}
-                    </span>
-                  </>
+                  hasImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img 
+                      src={ITEM_IMAGES[item]} 
+                      alt={item} 
+                      className="w-full h-full object-contain rounded-md"
+                    />
+                  ) : (
+                    <>
+                      <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mb-1">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+                      </div>
+                      <span className="text-[9px] font-bold text-blue-400 tracking-wider uppercase truncate w-full px-1">
+                        {item}
+                      </span>
+                    </>
+                  )
                 ) : (
                   <span className="text-[10px] text-zinc-800 font-mono">EMPTY</span>
                 )}
