@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { ShieldAlert, Fingerprint, FlaskConical, LogOut } from 'lucide-react';
+import { ShieldAlert, Fingerprint, FlaskConical, LogOut, X, Search, Link, Trash2 } from 'lucide-react';
 
 const INITIAL_ROOMS = ['HOSPITAL', 'PHARMACY', 'MILITARY BASE', 'SCIENTIST LAB'];
 const FINAL_ROOM = 'PARTICIPANT LAB';
@@ -29,10 +29,12 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
   },
 };
 
-// Map item names exactly as they appear in ROOM_CODES to their image files in the public folder
 const ITEM_IMAGES: Record<string, string> = {
   'Soldier Jacket': '/jacket.jpg',
-  // You can add more images here later, e.g., 'Viral Culture': '/culture.jpg'
+};
+
+const EXAMINE_IMAGES: Record<string, string> = {
+  'Soldier Jacket': '/soldier_note.jpg',
 };
 
 export default function DashboardPage() {
@@ -44,6 +46,12 @@ export default function DashboardPage() {
   const [roomCode, setRoomCode] = useState('');
   const [codeLoading, setCodeLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
+
+  // Inventory Interaction State
+  const [selectedItem, setSelectedItem] = useState<string | null>(null);
+  const [examineImage, setExamineImage] = useState<string | null>(null);
+  const [itemActionMessage, setItemActionMessage] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -209,6 +217,61 @@ export default function DashboardPage() {
     setCodeLoading(false);
   };
 
+  // Inventory Action Handlers
+  const handleExamine = () => {
+    if (!selectedItem) return;
+    const imageSrc = EXAMINE_IMAGES[selectedItem];
+    if (imageSrc) {
+      setExamineImage(imageSrc);
+      setItemActionMessage(null);
+      // Auto-close examine view after 5 seconds
+      setTimeout(() => {
+        setExamineImage(null);
+      }, 5000);
+    } else {
+      setItemActionMessage("Nothing of interest found on this item.");
+    }
+  };
+
+  const handleCombine = () => {
+    setItemActionMessage("This item can not be combined with anything.");
+  };
+
+  const handleDiscard = async () => {
+    if (!team || !selectedItem) return;
+
+    const hasClearedMilitaryBase = team.visited_rooms?.includes('MILITARY BASE');
+
+    if (!hasClearedMilitaryBase) {
+      setItemActionMessage("This item can not be discarded right now.");
+      return;
+    }
+
+    setActionLoading(true);
+    const newInventory = team.inventory.filter((i: string) => i !== selectedItem);
+    
+    const { data: updatedTeam, error } = await supabase
+      .from('teams')
+      .update({ inventory: newInventory })
+      .eq('id', team.id)
+      .select()
+      .single();
+
+    if (!error && updatedTeam) {
+      setTeam(updatedTeam);
+      setSelectedItem(null);
+      setItemActionMessage(null);
+    } else {
+      setItemActionMessage("Database sync failed.");
+    }
+    setActionLoading(false);
+  };
+
+  const closeMenu = () => {
+    setSelectedItem(null);
+    setItemActionMessage(null);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-yellow-500 flex items-center justify-center font-mono text-sm tracking-widest text-center px-4">
@@ -222,7 +285,7 @@ export default function DashboardPage() {
   const isFinalRoom = team.current_room === FINAL_ROOM;
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 pb-24">
+    <main className="min-h-screen bg-black text-white p-6 pb-24 relative">
       <header className="flex justify-between items-center border-b border-zinc-800 pb-4 mb-6">
         <div>
           <h1 className="text-xl font-black text-red-600 tracking-widest">OUTBREAK OS</h1>
@@ -295,12 +358,14 @@ export default function DashboardPage() {
             const hasImage = item && ITEM_IMAGES[item];
 
             return (
-              <div 
+              <button 
                 key={index} 
-                className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-1 text-center transition-all duration-500 overflow-hidden ${
+                onClick={() => item && setSelectedItem(item)}
+                disabled={!item}
+                className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-1 text-center transition-all duration-500 overflow-hidden outline-none ${
                   item 
-                    ? 'bg-zinc-800/80 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.35)] scale-100' 
-                    : 'bg-black border-blue-800/60 scale-95'
+                    ? 'bg-zinc-800/80 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.35)] scale-100 hover:scale-105 cursor-pointer' 
+                    : 'bg-black border-blue-800/60 scale-95 cursor-default'
                 }`}
               >
                 {item ? (
@@ -324,11 +389,74 @@ export default function DashboardPage() {
                 ) : (
                   <span className="text-[10px] text-zinc-800 font-mono">EMPTY</span>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
+
+      {/* Item Interaction Menu Overlay */}
+      {selectedItem && !examineImage && (
+        <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in">
+            <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
+              <h3 className="font-black text-blue-500 tracking-wider uppercase">{selectedItem}</h3>
+              <button onClick={closeMenu} className="text-zinc-500 hover:text-white transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-2 flex flex-col gap-2">
+              {itemActionMessage && (
+                <div className="p-3 mb-2 bg-zinc-950 border border-zinc-800 rounded text-xs font-mono text-yellow-500 text-center">
+                  {itemActionMessage}
+                </div>
+              )}
+              
+              <button 
+                onClick={handleExamine}
+                className="flex items-center gap-3 w-full p-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-colors font-bold tracking-widest text-sm"
+              >
+                <Search className="w-5 h-5 text-blue-400" /> EXAMINE
+              </button>
+              
+              <button 
+                onClick={handleCombine}
+                className="flex items-center gap-3 w-full p-4 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl transition-colors font-bold tracking-widest text-sm"
+              >
+                <Link className="w-5 h-5 text-green-400" /> COMBINE
+              </button>
+              
+              <button 
+                onClick={handleDiscard}
+                disabled={actionLoading}
+                className="flex items-center gap-3 w-full p-4 bg-red-950/40 hover:bg-red-900/60 border border-red-900/50 text-red-400 rounded-xl transition-colors font-bold tracking-widest text-sm disabled:opacity-50"
+              >
+                <Trash2 className="w-5 h-5" /> {actionLoading ? 'DISCARDING...' : 'DISCARD'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Examine Image Overlay */}
+      {examineImage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black backdrop-blur-md">
+          <div className="relative w-full h-full p-4 flex flex-col items-center justify-center animate-in zoom-in duration-300">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img 
+              src={examineImage} 
+              alt="Examined Item Detail" 
+              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-zinc-800"
+            />
+            <div className="absolute bottom-10 left-0 w-full text-center">
+              <span className="text-zinc-500 font-mono text-xs tracking-widest uppercase animate-pulse">
+                ANALYZING DOCUMENT...
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
