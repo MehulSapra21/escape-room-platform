@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { Users, Activity } from 'lucide-react';
+import { Users, Activity, LogOut } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -25,21 +25,24 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    // Verify admin access
     const isAdmin = localStorage.getItem('is_admin');
     if (!isAdmin) {
       router.push('/');
       return;
     }
 
-    // Initial fetch
     fetchTeams();
     setLoading(false);
 
-    // Auto-refresh every 10 seconds to monitor team movements live
     const interval = setInterval(fetchTeams, 10000);
     return () => clearInterval(interval);
   }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('team_id');
+    localStorage.removeItem('is_admin');
+    router.push('/');
+  };
 
   if (loading) return <div className="min-h-screen bg-black text-white p-6">LOADING OVERSEER TERMINAL...</div>;
 
@@ -53,9 +56,17 @@ export default function AdminDashboard() {
           </h1>
           <p className="text-xs text-zinc-500 font-mono mt-1">EVENT COMMAND & CONTROL CENTER</p>
         </div>
-        <div className="text-left md:text-right">
-          <span className="text-[10px] text-zinc-500 block tracking-widest">LAST SYNC</span>
-          <span className="text-xs font-bold text-green-500 tracking-widest">{lastUpdated || 'SYNCING...'}</span>
+        <div className="flex items-center gap-6">
+          <div className="text-right hidden md:block">
+            <span className="text-[10px] text-zinc-500 block tracking-widest">LAST SYNC</span>
+            <span className="text-xs font-bold text-green-500 tracking-widest">{lastUpdated || 'SYNCING...'}</span>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white px-4 py-2 rounded-lg transition-colors text-xs font-bold tracking-widest"
+          >
+            <LogOut className="w-4 h-4" /> LOGOUT
+          </button>
         </div>
       </header>
 

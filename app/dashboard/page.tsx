@@ -3,13 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { ShieldAlert, Fingerprint, FlaskConical } from 'lucide-react';
+import { ShieldAlert, Fingerprint, FlaskConical, LogOut } from 'lucide-react';
 
 const INITIAL_ROOMS = ['HOSPITAL', 'PHARMACY', 'MILITARY BASE', 'SCIENTIST LAB'];
 const FINAL_ROOM = 'PARTICIPANT LAB';
 const TOTAL_INVENTORY_SLOTS = 8;
 
-// Define multiple codes per room. Only isCritical: true will trigger room progression.
 const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: boolean }>> = {
   'HOSPITAL': { 
     'HOSP123': { item: 'Viral Culture', isCritical: true },
@@ -100,6 +99,12 @@ export default function DashboardPage() {
     initDashboard();
   }, [router]);
 
+  const handleLogout = () => {
+    localStorage.removeItem('team_id');
+    localStorage.removeItem('is_admin');
+    router.push('/');
+  };
+
   const handleCodeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!team) return;
@@ -117,7 +122,6 @@ export default function DashboardPage() {
     const discoveredItem = availableCodesForRoom ? availableCodesForRoom[roomCode] : null;
 
     if (discoveredItem) {
-      // Check if they already have this item
       if (team.inventory?.includes(discoveredItem.item)) {
         setMessage({ text: "ITEM ALREADY IN INVENTORY.", type: "error" });
         setCodeLoading(false);
@@ -126,7 +130,6 @@ export default function DashboardPage() {
 
       const newInventory = [...(team.inventory || []), discoveredItem.item];
 
-      // Logic Branch 1: The item is a Critical Component (Moves them to next room)
       if (discoveredItem.isCritical) {
         const newVisitedRooms = [...(team.visited_rooms || []), team.current_room];
         const remainingRooms = INITIAL_ROOMS.filter(r => !newVisitedRooms.includes(r));
@@ -174,9 +177,7 @@ export default function DashboardPage() {
         } else {
           setMessage({ text: "Database sync failed. Try again.", type: "error" });
         }
-      } 
-      // Logic Branch 2: The item is standard inventory (Does NOT move them to next room)
-      else {
+      } else {
         const { data: updatedTeam, error: updateError } = await supabase
           .from('teams')
           .update({
@@ -220,7 +221,14 @@ export default function DashboardPage() {
           <h1 className="text-xl font-black text-red-600 tracking-widest">OUTBREAK OS</h1>
           <p className="text-xs text-zinc-500 font-mono">TEAM: {team.team_login_id}</p>
         </div>
-        <div className="text-right flex items-center gap-2">
+        <div className="text-right flex items-center gap-4">
+          <button 
+            onClick={handleLogout}
+            className="text-zinc-500 hover:text-white transition-colors"
+            title="Disconnect Terminal"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
           {isFinalRoom ? (
             <FlaskConical className="text-blue-500 w-5 h-5 animate-pulse" />
           ) : (
