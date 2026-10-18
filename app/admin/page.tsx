@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { Users, Activity, LogOut } from 'lucide-react';
+import { Users, Activity, LogOut, Settings } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -11,6 +11,9 @@ export default function AdminDashboard() {
   const [teams, setTeams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
+  
+  // Track which team is currently being reset so we can show a loading state on their buttons
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const fetchTeams = async () => {
     const { data, error } = await supabase
@@ -42,6 +45,44 @@ export default function AdminDashboard() {
     localStorage.removeItem('team_id');
     localStorage.removeItem('is_admin');
     router.push('/');
+  };
+
+  // Reset: Clears inventory & room, but keeps has_started = true so they skip the video
+  const handlePartialReset = async (teamId: string) => {
+    if (!confirm(`Are you sure you want to PARTIAL reset ${teamId}? They will skip the video but lose all items.`)) return;
+    
+    setActionLoading(teamId);
+    await supabase
+      .from('teams')
+      .update({
+        has_started: true,
+        current_room: null,
+        inventory: [],
+        visited_rooms: []
+      })
+      .eq('team_login_id', teamId);
+      
+    await fetchTeams();
+    setActionLoading(null);
+  };
+
+  // Reset: Clears everything, including has_started, forcing them back to standby/video
+  const handlePureReset = async (teamId: string) => {
+    if (!confirm(`Are you sure you want to PURE reset ${teamId}? They will start from the Standby screen.`)) return;
+    
+    setActionLoading(teamId);
+    await supabase
+      .from('teams')
+      .update({
+        has_started: false,
+        current_room: null,
+        inventory: [],
+        visited_rooms: []
+      })
+      .eq('team_login_id', teamId);
+      
+    await fetchTeams();
+    setActionLoading(null);
   };
 
   if (loading) return <div className="min-h-screen bg-black text-white p-6">LOADING OVERSEER TERMINAL...</div>;
@@ -81,6 +122,9 @@ export default function AdminDashboard() {
                 <th className="px-6 py-4 border-b border-zinc-800">Status</th>
                 <th className="px-6 py-4 border-b border-zinc-800">Current Location</th>
                 <th className="px-6 py-4 border-b border-zinc-800">Items Gathered</th>
+                <th className="px-6 py-4 border-b border-zinc-800 flex items-center gap-2">
+                  <Settings className="w-4 h-4" /> Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800">
@@ -100,11 +144,27 @@ export default function AdminDashboard() {
                   <td className="px-6 py-4 text-zinc-400 font-mono text-xs">
                     {team.inventory?.length || 0} / 8 slots filled
                   </td>
+                  <td className="px-6 py-4 flex gap-2">
+                    <button
+                      onClick={() => handlePartialReset(team.team_login_id)}
+                      disabled={actionLoading === team.team_login_id}
+                      className="bg-blue-900/50 hover:bg-blue-700 text-blue-200 px-3 py-2 rounded text-[10px] font-bold tracking-widest transition-colors disabled:opacity-50"
+                    >
+                      PARTIAL RESET
+                    </button>
+                    <button
+                      onClick={() => handlePureReset(team.team_login_id)}
+                      disabled={actionLoading === team.team_login_id}
+                      className="bg-red-900/50 hover:bg-red-700 text-red-200 px-3 py-2 rounded text-[10px] font-bold tracking-widest transition-colors disabled:opacity-50"
+                    >
+                      PURE RESET
+                    </button>
+                  </td>
                 </tr>
               ))}
               {teams.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-zinc-500 italic">
+                  <td colSpan={5} className="px-6 py-8 text-center text-zinc-500 italic">
                     No teams detected in the database.
                   </td>
                 </tr>
