@@ -302,17 +302,19 @@ export default function DashboardPage() {
       )}
 
       <div>
-        <h2 className="text-xs text-blue-500 mb-3 tracking-widest font-semibold uppercase">Inventory</h2>
+        {/* Updated heading to match the large 3xl room text */}
+        <h2 className="text-3xl font-black text-blue-500 mb-4 tracking-wider uppercase">INVENTORY</h2>
         <div className="grid grid-cols-4 gap-3">
           {inventorySlots.map((_, index) => {
             const item = currentInventory[index];
             return (
               <div 
                 key={index} 
-                className={`aspect-square rounded-lg border flex flex-col items-center justify-center p-2 text-center transition-all duration-500 ${
+                // Updated borders to border-2 and brighter blues
+                className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-2 text-center transition-all duration-500 ${
                   item 
-                    ? 'bg-zinc-800/80 border-blue-500/70 shadow-[0_0_15px_rgba(59,130,246,0.25)] scale-100' 
-                    : 'bg-black border-blue-900/40 scale-95'
+                    ? 'bg-zinc-800/80 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.35)] scale-100' 
+                    : 'bg-black border-blue-800/60 scale-95'
                 }`}
               >
                 {item ? (
