@@ -98,7 +98,6 @@ export default function DashboardPage() {
 
     initDashboard();
 
-    // BACKGROUND SYNC: Check for Admin Resets every 5 seconds
     const syncInterval = setInterval(async () => {
       const teamId = localStorage.getItem('team_id');
       if (!teamId) return;
@@ -110,16 +109,13 @@ export default function DashboardPage() {
         .single();
 
       if (!error && data) {
-        // Detect Pure Reset (Team was sent back to standby)
         if (!data.has_started) {
           router.push('/standby');
-        }
-        // Detect Partial Reset (Team is active, but room was wiped)
-        else if (data.has_started && !data.current_room) {
+        } else if (data.has_started && !data.current_room) {
           window.location.reload();
         }
       }
-    }, 10000);
+    }, 5000);
 
     return () => clearInterval(syncInterval);
   }, [router]);
@@ -262,7 +258,6 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Current Objective Display */}
       <div className={`border rounded-xl p-6 shadow-2xl mb-8 relative overflow-hidden ${isFinalRoom ? 'bg-blue-950/20 border-blue-900/50' : 'bg-zinc-900 border-zinc-700'}`}>
         <div className={`absolute top-0 left-0 w-1 h-full ${isFinalRoom ? 'bg-blue-500' : 'bg-yellow-500'}`}></div>
         <h2 className="text-xs text-zinc-400 mb-2 tracking-widest font-semibold uppercase">Current Location Target</h2>
@@ -276,7 +271,6 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Code Entry Interface */}
       {!isFinalRoom && (
         <div className="mb-8">
           <form onSubmit={handleCodeSubmit} className="flex gap-2">
@@ -286,7 +280,7 @@ export default function DashboardPage() {
                 type="text" 
                 value={roomCode}
                 onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                placeholder="ENTER TERMINAL CODE"
+                placeholder="TYPE CODE"
                 className="w-full bg-zinc-900 border border-zinc-700 rounded-lg py-4 pl-12 pr-4 text-white focus:outline-none focus:border-red-600 transition-colors uppercase font-mono tracking-widest text-sm"
                 required
               />
@@ -296,7 +290,7 @@ export default function DashboardPage() {
               disabled={codeLoading}
               className="bg-red-700 hover:bg-red-600 text-white font-bold px-6 rounded-lg transition-colors disabled:opacity-50"
             >
-              {codeLoading ? '...' : 'VERIFY'}
+              {codeLoading ? '...' : 'ADD ITEM'}
             </button>
           </form>
           {message && (
@@ -307,9 +301,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Inventory System */}
       <div>
-        <h2 className="text-xs text-zinc-500 mb-3 tracking-widest font-semibold uppercase">Inventory Cache</h2>
+        <h2 className="text-xs text-blue-500 mb-3 tracking-widest font-semibold uppercase">Inventory</h2>
         <div className="grid grid-cols-4 gap-3">
           {inventorySlots.map((_, index) => {
             const item = currentInventory[index];
@@ -318,16 +311,16 @@ export default function DashboardPage() {
                 key={index} 
                 className={`aspect-square rounded-lg border flex flex-col items-center justify-center p-2 text-center transition-all duration-500 ${
                   item 
-                    ? 'bg-zinc-800/80 border-green-600/50 shadow-[0_0_15px_rgba(22,163,74,0.15)] scale-100' 
-                    : 'bg-black border-zinc-800/50 scale-95'
+                    ? 'bg-zinc-800/80 border-blue-500/70 shadow-[0_0_15px_rgba(59,130,246,0.25)] scale-100' 
+                    : 'bg-black border-blue-900/40 scale-95'
                 }`}
               >
                 {item ? (
                   <>
-                    <div className="w-8 h-8 rounded-full bg-green-900/30 flex items-center justify-center mb-1">
-                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                    <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mb-1">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
                     </div>
-                    <span className="text-[9px] font-bold text-green-500 tracking-wider uppercase truncate w-full">
+                    <span className="text-[9px] font-bold text-blue-400 tracking-wider uppercase truncate w-full">
                       {item}
                     </span>
                   </>
