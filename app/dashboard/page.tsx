@@ -57,7 +57,8 @@ const CHESS_ANSWER_KEY = {
   R1: 'Pawn', R2: 'Queen', R3: 'King'
 };
 
-const CHESS_PIECES = ['Pawn', 'Bishop', 'Rook', 'Knight', 'Queen', 'King'];
+// Removed Pawn and Knight so they aren't selectable in the dropdowns
+const CHESS_PIECES = ['Bishop', 'Rook', 'Queen', 'King'];
 
 const BOX_PASSCODE = '4716';
 
@@ -90,8 +91,9 @@ export default function DashboardPage() {
 
   // Chess Puzzle State
   const [showChessPuzzle, setShowChessPuzzle] = useState(false);
+  // Pre-fill the fixed positions (L3 and R1)
   const [chessAnswers, setChessAnswers] = useState<Record<string, string>>({
-    L1: '', L2: '', L3: '', R1: '', R2: '', R3: ''
+    L1: '', L2: '', L3: 'Knight', R1: 'Pawn', R2: '', R3: ''
   });
   const [chessMessage, setChessMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
 
@@ -288,7 +290,8 @@ export default function DashboardPage() {
       setShowChessPuzzle(true);
       setItemActionMessage(null);
       setChessMessage(null);
-      setChessAnswers({ L1: '', L2: '', L3: '', R1: '', R2: '', R3: '' });
+      // Ensure Knight and Pawn are reset to their permanent positions
+      setChessAnswers({ L1: '', L2: '', L3: 'Knight', R1: 'Pawn', R2: '', R3: '' });
       return;
     }
 
@@ -316,13 +319,11 @@ export default function DashboardPage() {
   const handleDiscard = async () => {
     if (!team || !selectedItem) return;
 
-    // Items that can never be discarded
     if (selectedItem === 'Component-C Box' || selectedItem === 'Component C' || selectedItem === 'Lab Coat' || selectedItem === 'Chess Puzzle') {
       setItemActionMessage("This item can not be discarded.");
       return;
     }
 
-    // Items that require a room to be cleared before discarding
     const hasClearedMilitaryBase = team.visited_rooms?.includes('MILITARY BASE');
     if (selectedItem === 'Soldier Jacket' || selectedItem === 'Crime Scene Poster') {
       if (!hasClearedMilitaryBase) {
@@ -386,7 +387,6 @@ export default function DashboardPage() {
     }
 
     if (isCorrect) {
-      // Third digit is '5' in this example. Encrypted phrase: "The third digit is 5" -> "Uif uijse ejhju jt 5"
       setChessMessage({ 
         text: "Uif uijse ejhju jt 5", 
         type: 'success' 
@@ -716,16 +716,22 @@ export default function DashboardPage() {
                 <div className="flex-1 space-y-4">
                   <h4 className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center border-b border-zinc-800 pb-2">Left Wall</h4>
                   {['L1', 'L2', 'L3'].map((pos) => (
-                    <select 
-                      key={pos}
-                      value={chessAnswers[pos]}
-                      onChange={(e) => setChessAnswers({...chessAnswers, [pos]: e.target.value})}
-                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
-                      required
-                    >
-                      <option value="" disabled>Select Piece</option>
-                      {CHESS_PIECES.map(piece => <option key={piece} value={piece}>{piece}</option>)}
-                    </select>
+                    pos === 'L3' ? (
+                      <div key={pos} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-zinc-500 text-center font-bold tracking-widest opacity-70">
+                        KNIGHT
+                      </div>
+                    ) : (
+                      <select 
+                        key={pos}
+                        value={chessAnswers[pos]}
+                        onChange={(e) => setChessAnswers({...chessAnswers, [pos]: e.target.value})}
+                        className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                        required
+                      >
+                        <option value="" disabled>Select Piece</option>
+                        {CHESS_PIECES.map(piece => <option key={piece} value={piece}>{piece}</option>)}
+                      </select>
+                    )
                   ))}
                 </div>
 
@@ -733,16 +739,22 @@ export default function DashboardPage() {
                 <div className="flex-1 space-y-4">
                   <h4 className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center border-b border-zinc-800 pb-2">Right Wall</h4>
                   {['R1', 'R2', 'R3'].map((pos) => (
-                    <select 
-                      key={pos}
-                      value={chessAnswers[pos]}
-                      onChange={(e) => setChessAnswers({...chessAnswers, [pos]: e.target.value})}
-                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
-                      required
-                    >
-                      <option value="" disabled>Select Piece</option>
-                      {CHESS_PIECES.map(piece => <option key={piece} value={piece}>{piece}</option>)}
-                    </select>
+                    pos === 'R1' ? (
+                      <div key={pos} className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-zinc-500 text-center font-bold tracking-widest opacity-70">
+                        PAWN
+                      </div>
+                    ) : (
+                      <select 
+                        key={pos}
+                        value={chessAnswers[pos]}
+                        onChange={(e) => setChessAnswers({...chessAnswers, [pos]: e.target.value})}
+                        className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                        required
+                      >
+                        <option value="" disabled>Select Piece</option>
+                        {CHESS_PIECES.map(piece => <option key={piece} value={piece}>{piece}</option>)}
+                      </select>
+                    )
                   ))}
                 </div>
               </div>
