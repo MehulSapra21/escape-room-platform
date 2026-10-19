@@ -17,7 +17,8 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
   'PHARMACY': { 
     'PHAR456': { item: 'Chemical Solvent', isCritical: true },
     'PILLS01': { item: 'Adrenaline Shot', isCritical: false },
-    'LABCOAT004': { item: 'Lab Coat', isCritical: false }
+    'LABCOAT004': { item: 'Lab Coat', isCritical: false },
+    'CHESS005': { item: 'Chess Puzzle', isCritical: false }
   },
   'MILITARY BASE': { 
     'MIL789': { item: 'Stabilizing Isotope', isCritical: true },
@@ -37,7 +38,8 @@ const ITEM_IMAGES: Record<string, string> = {
   'Crime Scene Poster': '/crime_scene_poster.jpg',
   'Component-C Box': '/component_c_box.jpg',
   'Component C': '/component_c.jpg',
-  'Lab Coat': '/lab_coat.jpg'
+  'Lab Coat': '/lab_coat.jpg',
+  'Chess Puzzle': '/chess.jpg'
 };
 
 const EXAMINE_IMAGES: Record<string, string> = {
@@ -48,6 +50,14 @@ const POSTER_ANSWER_KEY: Record<string, string> = {
   A: '7', B: '3', C: '11', D: '1', E: '9', F: '4',
   G: '12', H: '2', I: '8', J: '6', K: '10', L: '5'
 };
+
+// RE2 Remake Leon A Solution
+const CHESS_ANSWER_KEY = {
+  L1: 'Bishop', L2: 'Rook', L3: 'Knight',
+  R1: 'Pawn', R2: 'Queen', R3: 'King'
+};
+
+const CHESS_PIECES = ['Pawn', 'Bishop', 'Rook', 'Knight', 'Queen', 'King'];
 
 const BOX_PASSCODE = '4716';
 
@@ -78,6 +88,13 @@ export default function DashboardPage() {
   const [boxMessage, setBoxMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
   const [boxLoading, setBoxLoading] = useState(false);
 
+  // Chess Puzzle State
+  const [showChessPuzzle, setShowChessPuzzle] = useState(false);
+  const [chessAnswers, setChessAnswers] = useState<Record<string, string>>({
+    L1: '', L2: '', L3: '', R1: '', R2: '', R3: ''
+  });
+  const [chessMessage, setChessMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+
   useEffect(() => {
     const initDashboard = async () => {
       const teamId = localStorage.getItem('team_id');
@@ -98,9 +115,7 @@ export default function DashboardPage() {
       }
 
       if (!data.current_room) {
-        // TEMPORARY OVERRIDE FOR TESTING: Force spawn into Pharmacy
-        const assignedRoom = 'PHARMACY';
-        
+        const assignedRoom = 'PHARMACY'; // Temporary override for testing
         const { data: updatedData, error: updateError } = await supabase
           .from('teams')
           .update({ current_room: assignedRoom, has_started: true })
@@ -170,7 +185,6 @@ export default function DashboardPage() {
         return;
       }
 
-      // Check if inventory is full before adding a new item
       if ((team.inventory || []).length >= TOTAL_INVENTORY_SLOTS) {
         setMessage({ text: "INVENTORY FULL, DISCARD AN ITEM.", type: "error" });
         setCodeLoading(false);
@@ -270,6 +284,14 @@ export default function DashboardPage() {
       return;
     }
 
+    if (selectedItem === 'Chess Puzzle') {
+      setShowChessPuzzle(true);
+      setItemActionMessage(null);
+      setChessMessage(null);
+      setChessAnswers({ L1: '', L2: '', L3: '', R1: '', R2: '', R3: '' });
+      return;
+    }
+
     if (selectedItem === 'Lab Coat') {
       setItemActionMessage("NOTE FOUND: 4 uftu uvcft xfsf vtfe");
       return;
@@ -294,13 +316,14 @@ export default function DashboardPage() {
   const handleDiscard = async () => {
     if (!team || !selectedItem) return;
 
-    if (selectedItem === 'Component-C Box' || selectedItem === 'Component C' || selectedItem === 'Lab Coat') {
+    // Items that can never be discarded
+    if (selectedItem === 'Component-C Box' || selectedItem === 'Component C' || selectedItem === 'Lab Coat' || selectedItem === 'Chess Puzzle') {
       setItemActionMessage("This item can not be discarded.");
       return;
     }
 
+    // Items that require a room to be cleared before discarding
     const hasClearedMilitaryBase = team.visited_rooms?.includes('MILITARY BASE');
-    // If we add items from other rooms, we can check their specific clear conditions here too
     if (selectedItem === 'Soldier Jacket' || selectedItem === 'Crime Scene Poster') {
       if (!hasClearedMilitaryBase) {
         setItemActionMessage("This item can not be discarded right now.");
@@ -346,6 +369,31 @@ export default function DashboardPage() {
     } else {
       setPosterMessage({ 
         text: "INCORRECT ANALYSIS. VERIFY YOUR PARTS.", 
+        type: 'error' 
+      });
+    }
+  };
+
+  const handleChessSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    let isCorrect = true;
+    
+    for (const position in CHESS_ANSWER_KEY) {
+      if (chessAnswers[position] !== CHESS_ANSWER_KEY[position as keyof typeof CHESS_ANSWER_KEY]) {
+        isCorrect = false;
+        break;
+      }
+    }
+
+    if (isCorrect) {
+      // Third digit is '5' in this example. Encrypted phrase: "The third digit is 5" -> "Uif uijse ejhju jt 5"
+      setChessMessage({ 
+        text: "Uif uijse ejhju jt 5", 
+        type: 'success' 
+      });
+    } else {
+      setChessMessage({ 
+        text: "INCORRECT PLACEMENT. LOCK REMAINS ENGAGED.", 
         type: 'error' 
       });
     }
@@ -555,7 +603,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Item Interaction Menu Overlay */}
-      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && (
+      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && (
         <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in">
             <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
@@ -637,6 +685,73 @@ export default function DashboardPage() {
                 className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
               >
                 {boxLoading ? 'DECRYPTING...' : 'UNLOCK BOX'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Chess Plug Puzzle Overlay */}
+      {showChessPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowChessPuzzle(false); setChessMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">Assign Plugs</h3>
+            
+            {chessMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${chessMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {chessMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleChessSubmit}>
+              <div className="flex justify-between gap-4 mb-8">
+                {/* Left Wall */}
+                <div className="flex-1 space-y-4">
+                  <h4 className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center border-b border-zinc-800 pb-2">Left Wall</h4>
+                  {['L1', 'L2', 'L3'].map((pos) => (
+                    <select 
+                      key={pos}
+                      value={chessAnswers[pos]}
+                      onChange={(e) => setChessAnswers({...chessAnswers, [pos]: e.target.value})}
+                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                      required
+                    >
+                      <option value="" disabled>Select Piece</option>
+                      {CHESS_PIECES.map(piece => <option key={piece} value={piece}>{piece}</option>)}
+                    </select>
+                  ))}
+                </div>
+
+                {/* Right Wall */}
+                <div className="flex-1 space-y-4">
+                  <h4 className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center border-b border-zinc-800 pb-2">Right Wall</h4>
+                  {['R1', 'R2', 'R3'].map((pos) => (
+                    <select 
+                      key={pos}
+                      value={chessAnswers[pos]}
+                      onChange={(e) => setChessAnswers({...chessAnswers, [pos]: e.target.value})}
+                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                      required
+                    >
+                      <option value="" disabled>Select Piece</option>
+                      {CHESS_PIECES.map(piece => <option key={piece} value={piece}>{piece}</option>)}
+                    </select>
+                  ))}
+                </div>
+              </div>
+              
+              <button 
+                type="submit" 
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest"
+              >
+                CONFIRM PLACEMENT
               </button>
             </form>
           </div>
