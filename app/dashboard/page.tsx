@@ -15,13 +15,14 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
     'MEDKIT99': { item: 'First Aid Kit', isCritical: false }
   },
   'PHARMACY': { 
-    'PHAR456': { item: 'Chemical Solvent', isCritical: true },
+    'PHAR456': { item: 'Chemical Solvent', isCritical: false }, // No longer critical, Component B is
     'PILLS01': { item: 'Adrenaline Shot', isCritical: false },
     'LABCOAT004': { item: 'Lab Coat', isCritical: false },
-    'CHESS005': { item: 'Chess Puzzle', isCritical: false }
+    'CHESS005': { item: 'Chess Puzzle', isCritical: false },
+    'COMPONENT-B-006': { item: 'Component-B Box', isCritical: false }
   },
   'MILITARY BASE': { 
-    'MIL789': { item: 'Stabilizing Isotope', isCritical: true },
+    'MIL789': { item: 'Stabilizing Isotope', isCritical: false }, // No longer critical, Component C is
     'KEYCARD': { item: 'Access Card', isCritical: false },
     'JACKET001': { item: 'Soldier Jacket', isCritical: false },
     'POSTER002': { item: 'Crime Scene Poster', isCritical: false },
@@ -39,7 +40,9 @@ const ITEM_IMAGES: Record<string, string> = {
   'Component-C Box': '/component_c_box.jpg',
   'Component C': '/component_c.jpg',
   'Lab Coat': '/lab_coat.jpg',
-  'Chess Puzzle': '/chess.jpg'
+  'Chess Puzzle': '/chess.jpg',
+  'Component-B Box': '/component_c_box.jpg', // Reusing the box image
+  'Component B': '/component_b.jpg'          // The actual component
 };
 
 const EXAMINE_IMAGES: Record<string, string> = {
@@ -51,16 +54,14 @@ const POSTER_ANSWER_KEY: Record<string, string> = {
   G: '12', H: '2', I: '8', J: '6', K: '10', L: '5'
 };
 
-// RE2 Remake Leon A Solution
 const CHESS_ANSWER_KEY = {
   L1: 'Bishop', L2: 'Rook', L3: 'Knight',
   R1: 'Pawn', R2: 'Queen', R3: 'King'
 };
-
-// Removed Pawn and Knight so they aren't selectable in the dropdowns
 const CHESS_PIECES = ['Bishop', 'Rook', 'Queen', 'King'];
 
-const BOX_PASSCODE = '4716';
+const BOX_PASSCODE = '4716';    // Military Base Component C Passcode
+const BOX_B_PASSCODE = '8250';  // Pharmacy Component B Passcode (Change this later!)
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -78,24 +79,28 @@ export default function DashboardPage() {
   const [itemActionMessage, setItemActionMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Poster Puzzle State
+  // Puzzle States
   const [showPosterPuzzle, setShowPosterPuzzle] = useState(false);
   const [posterAnswers, setPosterAnswers] = useState<Record<string, string>>({});
   const [posterMessage, setPosterMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
 
-  // Box Puzzle State
+  const [showChessPuzzle, setShowChessPuzzle] = useState(false);
+  const [chessAnswers, setChessAnswers] = useState<Record<string, string>>({
+    L1: '', L2: '', L3: 'Knight', R1: 'Pawn', R2: '', R3: ''
+  });
+  const [chessMessage, setChessMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+
+  // Component C Box State
   const [showBoxPuzzle, setShowBoxPuzzle] = useState(false);
   const [boxCodeArr, setBoxCodeArr] = useState(['', '', '', '']);
   const [boxMessage, setBoxMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
   const [boxLoading, setBoxLoading] = useState(false);
 
-  // Chess Puzzle State
-  const [showChessPuzzle, setShowChessPuzzle] = useState(false);
-  // Pre-fill the fixed positions (L3 and R1)
-  const [chessAnswers, setChessAnswers] = useState<Record<string, string>>({
-    L1: '', L2: '', L3: 'Knight', R1: 'Pawn', R2: '', R3: ''
-  });
-  const [chessMessage, setChessMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  // Component B Box State
+  const [showBoxBPuzzle, setShowBoxBPuzzle] = useState(false);
+  const [boxBCodeArr, setBoxBCodeArr] = useState(['', '', '', '']);
+  const [boxBMessage, setBoxBMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [boxBLoading, setBoxBLoading] = useState(false);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -286,11 +291,18 @@ export default function DashboardPage() {
       return;
     }
 
+    if (selectedItem === 'Component-B Box') {
+      setShowBoxBPuzzle(true);
+      setItemActionMessage(null);
+      setBoxBMessage(null);
+      setBoxBCodeArr(['', '', '', '']);
+      return;
+    }
+
     if (selectedItem === 'Chess Puzzle') {
       setShowChessPuzzle(true);
       setItemActionMessage(null);
       setChessMessage(null);
-      // Ensure Knight and Pawn are reset to their permanent positions
       setChessAnswers({ L1: '', L2: '', L3: 'Knight', R1: 'Pawn', R2: '', R3: '' });
       return;
     }
@@ -319,14 +331,26 @@ export default function DashboardPage() {
   const handleDiscard = async () => {
     if (!team || !selectedItem) return;
 
-    if (selectedItem === 'Component-C Box' || selectedItem === 'Component C' || selectedItem === 'Lab Coat' || selectedItem === 'Chess Puzzle') {
+    // Items that can NEVER be discarded
+    const nonDiscardable = ['Component-C Box', 'Component C', 'Component-B Box', 'Component B'];
+    if (nonDiscardable.includes(selectedItem)) {
       setItemActionMessage("This item can not be discarded.");
       return;
     }
 
+    // Room completion dependencies for discarding
     const hasClearedMilitaryBase = team.visited_rooms?.includes('MILITARY BASE');
+    const hasClearedPharmacy = team.visited_rooms?.includes('PHARMACY');
+
     if (selectedItem === 'Soldier Jacket' || selectedItem === 'Crime Scene Poster') {
       if (!hasClearedMilitaryBase) {
+        setItemActionMessage("This item can not be discarded right now.");
+        return;
+      }
+    }
+
+    if (selectedItem === 'Lab Coat' || selectedItem === 'Chess Puzzle') {
+      if (!hasClearedPharmacy) {
         setItemActionMessage("This item can not be discarded right now.");
         return;
       }
@@ -399,6 +423,7 @@ export default function DashboardPage() {
     }
   };
 
+  // Logic for Component C Box
   const handleBoxChange = (index: number, value: string) => {
     if (!/^[0-9]*$/.test(value)) return;
     const newArr = [...boxCodeArr];
@@ -472,6 +497,82 @@ export default function DashboardPage() {
       setBoxMessage({ text: "Database sync failed. Try again.", type: "error" });
     }
     setBoxLoading(false);
+  };
+
+  // Logic for Component B Box
+  const handleBoxBChange = (index: number, value: string) => {
+    if (!/^[0-9]*$/.test(value)) return;
+    const newArr = [...boxBCodeArr];
+    newArr[index] = value.slice(-1);
+    setBoxBCodeArr(newArr);
+    
+    if (value && index < 3) {
+      document.getElementById(`box-b-input-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleBoxBSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const enteredCode = boxBCodeArr.join('');
+    
+    if (enteredCode !== BOX_B_PASSCODE) {
+      setBoxBMessage({ text: "ACCESS DENIED. INVALID PASSCODE.", type: "error" });
+      return;
+    }
+
+    setBoxBLoading(true);
+    
+    const newInventory = team.inventory.filter((i: string) => i !== 'Component-B Box');
+    newInventory.push('Component B');
+
+    const newVisitedRooms = [...(team.visited_rooms || []), team.current_room];
+    const remainingRooms = INITIAL_ROOMS.filter(r => !newVisitedRooms.includes(r));
+    let nextRoom = FINAL_ROOM;
+
+    if (remainingRooms.length > 0) {
+      const { data: allTeams } = await supabase.from('teams').select('current_room');
+      const roomCounts = remainingRooms.reduce((acc, room) => {
+        acc[room] = 0;
+        return acc;
+      }, {} as Record<string, number>);
+
+      allTeams?.forEach((t) => {
+        if (t.current_room && roomCounts[t.current_room] !== undefined) {
+          roomCounts[t.current_room]++;
+        }
+      });
+
+      nextRoom = remainingRooms[0];
+      let minCount = roomCounts[nextRoom];
+      
+      for (const room of remainingRooms) {
+        if (roomCounts[room] < minCount) {
+          minCount = roomCounts[room];
+          nextRoom = room;
+        }
+      }
+    }
+
+    const { data: updatedTeam, error: updateError } = await supabase
+      .from('teams')
+      .update({
+        inventory: newInventory,
+        visited_rooms: newVisitedRooms,
+        current_room: nextRoom
+      })
+      .eq('id', team.id)
+      .select()
+      .single();
+
+    if (!updateError && updatedTeam) {
+      setTeam(updatedTeam);
+      setShowBoxBPuzzle(false);
+      setSelectedItem(null);
+      setMessage({ text: `CRITICAL ITEM ACQUIRED: Component B. Routing to next sector...`, type: "success" });
+    } else {
+      setBoxBMessage({ text: "Database sync failed. Try again.", type: "error" });
+    }
+    setBoxBLoading(false);
   };
 
   const closeMenu = () => {
@@ -603,7 +704,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Item Interaction Menu Overlay */}
-      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && (
+      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && (
         <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in">
             <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
@@ -642,6 +743,51 @@ export default function DashboardPage() {
                 <Trash2 className="w-5 h-5" /> {actionLoading ? 'DISCARDING...' : 'DISCARD'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Component-B Box 4-Digit Lock Overlay */}
+      {showBoxBPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
+            <button 
+              onClick={() => { setShowBoxBPuzzle(false); setBoxBMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center">Enter Passcode</h3>
+            
+            {boxBMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${boxBMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {boxBMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleBoxBSubmit}>
+              <div className="flex justify-center gap-3 mb-8">
+                {boxBCodeArr.map((digit, index) => (
+                  <input 
+                    key={index}
+                    id={`box-b-input-${index}`}
+                    type="text" 
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleBoxBChange(index, e.target.value)}
+                    className="w-14 h-16 bg-black border-2 border-zinc-700 rounded-lg text-center text-white text-3xl font-bold focus:border-red-500 outline-none transition-colors font-mono shadow-inner"
+                  />
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={boxBLoading}
+                className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {boxBLoading ? 'DECRYPTING...' : 'UNLOCK BOX'}
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -712,7 +858,6 @@ export default function DashboardPage() {
             
             <form onSubmit={handleChessSubmit}>
               <div className="flex justify-between gap-4 mb-8">
-                {/* Left Wall */}
                 <div className="flex-1 space-y-4">
                   <h4 className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center border-b border-zinc-800 pb-2">Left Wall</h4>
                   {['L1', 'L2', 'L3'].map((pos) => (
@@ -735,7 +880,6 @@ export default function DashboardPage() {
                   ))}
                 </div>
 
-                {/* Right Wall */}
                 <div className="flex-1 space-y-4">
                   <h4 className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center border-b border-zinc-800 pb-2">Right Wall</h4>
                   {['R1', 'R2', 'R3'].map((pos) => (
