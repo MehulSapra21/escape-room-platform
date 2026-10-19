@@ -16,7 +16,8 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
   },
   'PHARMACY': { 
     'PHAR456': { item: 'Chemical Solvent', isCritical: true },
-    'PILLS01': { item: 'Adrenaline Shot', isCritical: false }
+    'PILLS01': { item: 'Adrenaline Shot', isCritical: false },
+    'LABCOAT004': { item: 'Lab Coat', isCritical: false }
   },
   'MILITARY BASE': { 
     'MIL789': { item: 'Stabilizing Isotope', isCritical: true },
@@ -36,6 +37,7 @@ const ITEM_IMAGES: Record<string, string> = {
   'Crime Scene Poster': '/crime_scene_poster.jpg',
   'Component-C Box': '/component_c_box.jpg',
   'Component C': '/component_c.jpg',
+  'Lab Coat': '/lab_coat.jpg'
 };
 
 const EXAMINE_IMAGES: Record<string, string> = {
@@ -96,7 +98,9 @@ export default function DashboardPage() {
       }
 
       if (!data.current_room) {
-        const assignedRoom = 'MILITARY BASE';
+        // TEMPORARY OVERRIDE FOR TESTING: Force spawn into Pharmacy
+        const assignedRoom = 'PHARMACY';
+        
         const { data: updatedData, error: updateError } = await supabase
           .from('teams')
           .update({ current_room: assignedRoom, has_started: true })
@@ -162,6 +166,13 @@ export default function DashboardPage() {
     if (discoveredItem) {
       if (team.inventory?.includes(discoveredItem.item)) {
         setMessage({ text: "ITEM ALREADY IN INVENTORY.", type: "error" });
+        setCodeLoading(false);
+        return;
+      }
+
+      // Check if inventory is full before adding a new item
+      if ((team.inventory || []).length >= TOTAL_INVENTORY_SLOTS) {
+        setMessage({ text: "INVENTORY FULL, DISCARD AN ITEM.", type: "error" });
         setCodeLoading(false);
         return;
       }
@@ -259,6 +270,11 @@ export default function DashboardPage() {
       return;
     }
 
+    if (selectedItem === 'Lab Coat') {
+      setItemActionMessage("NOTE FOUND: 4 uftu uvcft xfsf vtfe");
+      return;
+    }
+
     const imageSrc = EXAMINE_IMAGES[selectedItem];
     if (imageSrc) {
       setExamineImage(imageSrc);
@@ -278,15 +294,18 @@ export default function DashboardPage() {
   const handleDiscard = async () => {
     if (!team || !selectedItem) return;
 
-    if (selectedItem === 'Component-C Box' || selectedItem === 'Component C') {
-      setItemActionMessage("This item can not be discarded in any way.");
+    if (selectedItem === 'Component-C Box' || selectedItem === 'Component C' || selectedItem === 'Lab Coat') {
+      setItemActionMessage("This item can not be discarded.");
       return;
     }
 
     const hasClearedMilitaryBase = team.visited_rooms?.includes('MILITARY BASE');
-    if (!hasClearedMilitaryBase) {
-      setItemActionMessage("This item can not be discarded right now.");
-      return;
+    // If we add items from other rooms, we can check their specific clear conditions here too
+    if (selectedItem === 'Soldier Jacket' || selectedItem === 'Crime Scene Poster') {
+      if (!hasClearedMilitaryBase) {
+        setItemActionMessage("This item can not be discarded right now.");
+        return;
+      }
     }
 
     setActionLoading(true);
@@ -354,11 +373,9 @@ export default function DashboardPage() {
 
     setBoxLoading(true);
     
-    // Replace the Box with the actual Component C
     const newInventory = team.inventory.filter((i: string) => i !== 'Component-C Box');
     newInventory.push('Component C');
 
-    // Because Component C is the critical item for this room, we trigger the room progression
     const newVisitedRooms = [...(team.visited_rooms || []), team.current_room];
     const remainingRooms = INITIAL_ROOMS.filter(r => !newVisitedRooms.includes(r));
     let nextRoom = FINAL_ROOM;
