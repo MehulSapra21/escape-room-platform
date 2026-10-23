@@ -13,7 +13,8 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
   'HOSPITAL': { 
     'HOSP123': { item: 'Viral Culture', isCritical: true },
     'MEDKIT99': { item: 'First Aid Kit', isCritical: false },
-    'IVBAG008': { item: 'IV Bag', isCritical: false }
+    'IVBAG008': { item: 'IV Bag', isCritical: false },
+    'TESTTUBE009': { item: 'Test Tube', isCritical: false }
   },
   'PHARMACY': { 
     'PHAR456': { item: 'Chemical Solvent', isCritical: false }, 
@@ -45,7 +46,10 @@ const ITEM_IMAGES: Record<string, string> = {
   'Component-B Box': '/component_c_box.jpg', 
   'Component B': '/component_b.jpg',
   'IV Bag': '/iv_bag.jpg',
-  'IV Bag (Decoded)': '/iv_bag.jpg' // Same image, indicates solved state
+  'IV Bag (Decoded)': '/iv_bag.jpg',
+  'Test Tube': '/test_tube.jpg',
+  'Serum': '/serum.jpg',
+  'Serum (Decoded)': '/serum.jpg'
 };
 
 const EXAMINE_IMAGES: Record<string, string> = {
@@ -62,6 +66,9 @@ const CHESS_ANSWER_KEY = {
   R1: 'Pawn', R2: 'Queen', R3: 'King'
 };
 const CHESS_PIECES = ['Bishop', 'Rook', 'Queen', 'King'];
+
+const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+const TUBE_CAPACITIES = [8, 5, 3];
 
 const BOX_PASSCODE = '4716';    
 const BOX_B_PASSCODE = '8250';  
@@ -93,11 +100,20 @@ export default function DashboardPage() {
   });
   const [chessMessage, setChessMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
 
-  // IV Bag Puzzle State
   const [showIVBagPuzzle, setShowIVBagPuzzle] = useState(false);
   const [ivBagAnswers, setIvBagAnswers] = useState<string[]>(['', '', '', '']);
   const [ivBagMessage, setIvBagMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
   const [ivBagLoading, setIvBagLoading] = useState(false);
+
+  const [showBloodPuzzle, setShowBloodPuzzle] = useState(false);
+  const [bloodAnswers, setBloodAnswers] = useState<string[]>(['', '']);
+  const [bloodMessage, setBloodMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [bloodLoading, setBloodLoading] = useState(false);
+
+  const [showSerumPuzzle, setShowSerumPuzzle] = useState(false);
+  const [serumTubes, setSerumTubes] = useState([8, 0, 0]);
+  const [serumMessage, setSerumMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [serumLoading, setSerumLoading] = useState(false);
 
   // Component C Box State
   const [showBoxPuzzle, setShowBoxPuzzle] = useState(false);
@@ -329,6 +345,27 @@ export default function DashboardPage() {
       return;
     }
 
+    if (selectedItem === 'Test Tube') {
+      setShowBloodPuzzle(true);
+      setItemActionMessage(null);
+      setBloodMessage(null);
+      setBloodAnswers(['', '']);
+      return;
+    }
+
+    if (selectedItem === 'Serum') {
+      setShowSerumPuzzle(true);
+      setItemActionMessage(null);
+      setSerumMessage(null);
+      setSerumTubes([8, 0, 0]);
+      return;
+    }
+
+    if (selectedItem === 'Serum (Decoded)') {
+      setItemActionMessage("SYNTHESIS COMPLETE. EXTRACTED KEY: 4");
+      return;
+    }
+
     if (selectedItem === 'Lab Coat') {
       setItemActionMessage("NOTE FOUND: 4 uftu uvcft xfsf vtfe");
       return;
@@ -379,7 +416,7 @@ export default function DashboardPage() {
       }
     }
 
-    if (selectedItem === 'IV Bag' || selectedItem === 'IV Bag (Decoded)') {
+    if (['IV Bag', 'IV Bag (Decoded)', 'Test Tube', 'Serum', 'Serum (Decoded)'].includes(selectedItem)) {
       if (!hasClearedHospital) {
         setItemActionMessage("This item can not be discarded right now.");
         return;
@@ -404,6 +441,77 @@ export default function DashboardPage() {
       setItemActionMessage("Database sync failed.");
     }
     setActionLoading(false);
+  };
+
+  // Logic for Blood Types Combination
+  const handleBloodSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bloodAnswers[0] || !bloodAnswers[1]) {
+      setBloodMessage({ text: "SELECT TWO BLOOD TYPES.", type: 'error' });
+      return;
+    }
+
+    const isCorrect = bloodAnswers.includes('A+') && bloodAnswers.includes('O-');
+    if (!isCorrect) {
+      setBloodMessage({ text: "INCOMPATIBLE BLOOD TYPES. REACTION FAILED.", type: 'error' });
+      return;
+    }
+
+    setBloodLoading(true);
+    const newInventory = team.inventory.filter((i: string) => i !== 'Test Tube');
+    newInventory.push('Serum');
+
+    const { data: updatedTeam, error } = await supabase
+      .from('teams').update({ inventory: newInventory }).eq('id', team.id).select().single();
+
+    if (!error && updatedTeam) {
+      setTeam(updatedTeam);
+      setShowBloodPuzzle(false);
+      setSelectedItem('Serum');
+      setItemActionMessage("TEST TUBES COMBINED SUCCESSFULLY INTO SERUM.");
+    } else {
+      setBloodMessage({ text: "Database sync failed.", type: "error" });
+    }
+    setBloodLoading(false);
+  };
+
+  // Logic for RE2 Serum Fluid Transfer
+  const handleSerumPour = async (fromIdx: number, toIdx: number) => {
+    if (serumLoading) return;
+    if (fromIdx === toIdx) return;
+
+    const newTubes = [...serumTubes];
+    const amount = Math.min(newTubes[fromIdx], TUBE_CAPACITIES[toIdx] - newTubes[toIdx]);
+    
+    if (amount === 0) return;
+
+    newTubes[fromIdx] -= amount;
+    newTubes[toIdx] += amount;
+    setSerumTubes(newTubes);
+
+    if (newTubes.includes(4)) {
+      setSerumLoading(true);
+      setSerumMessage({ text: "TARGET VOLUME REACHED! DECODING...", type: 'success' });
+
+      const newInventory = team.inventory.filter((i: string) => i !== 'Serum');
+      newInventory.push('Serum (Decoded)');
+
+      const { data: updatedTeam, error } = await supabase
+        .from('teams').update({ inventory: newInventory }).eq('id', team.id).select().single();
+
+      if (!error && updatedTeam) {
+        setTeam(updatedTeam);
+        setTimeout(() => {
+          setShowSerumPuzzle(false);
+          setSelectedItem('Serum (Decoded)');
+          setItemActionMessage("SYNTHESIS COMPLETE. EXTRACTED KEY: 4");
+          setSerumLoading(false);
+        }, 1500);
+      } else {
+        setSerumMessage({ text: "Database sync failed.", type: "error" });
+        setSerumLoading(false);
+      }
+    }
   };
 
   const handlePosterSubmit = (e: React.FormEvent) => {
@@ -766,7 +874,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Item Interaction Menu Overlay */}
-      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && !showIVBagPuzzle && (
+      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && !showIVBagPuzzle && !showBloodPuzzle && !showSerumPuzzle && (
         <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in">
             <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
@@ -805,6 +913,117 @@ export default function DashboardPage() {
                 <Trash2 className="w-5 h-5" /> {actionLoading ? 'DISCARDING...' : 'DISCARD'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hospital Test Tube Blood Puzzle */}
+      {showBloodPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowBloodPuzzle(false); setBloodMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">Analyze Blood</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Select the two infected blood types to initiate synthesis.</p>
+            
+            {bloodMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${bloodMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {bloodMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleBloodSubmit}>
+              <div className="flex flex-col gap-4 mb-8">
+                {[0, 1].map(idx => (
+                  <select 
+                    key={idx} 
+                    value={bloodAnswers[idx]} 
+                    onChange={(e) => { 
+                      const newAns = [...bloodAnswers]; 
+                      newAns[idx] = e.target.value; 
+                      setBloodAnswers(newAns); 
+                    }}
+                    className="w-full bg-black border border-zinc-700 rounded-lg p-4 text-white focus:border-blue-500 outline-none font-bold" 
+                    required
+                  >
+                    <option value="" disabled>Select Blood Sample {idx + 1}</option>
+                    {BLOOD_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                  </select>
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={bloodLoading} 
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {bloodLoading ? 'SYNTHESIZING...' : 'BEGIN SYNTHESIS'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Hospital RE2 Serum Puzzle */}
+      {showSerumPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowSerumPuzzle(false); setSerumMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-green-500 mb-2 uppercase tracking-widest text-center">Fluid Transfer</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Transfer serum between cartridges to reach exactly <strong className="text-white">4 ml</strong>.</p>
+            
+            {serumMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${serumMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {serumMessage.text}
+              </div>
+            )}
+            
+            <div className="flex justify-center gap-6 mb-8 pt-4">
+              {[0, 1, 2].map((idx) => (
+                <div key={idx} className="flex-1 flex flex-col items-center">
+                  <div className="text-zinc-500 font-mono text-xs mb-2 font-bold">MAX: {TUBE_CAPACITIES[idx]}</div>
+                  <div className="w-16 h-48 bg-zinc-950 border-2 border-zinc-700 rounded-b-xl relative overflow-hidden flex items-end shadow-inner">
+                    <div 
+                      className="w-full bg-green-500/80 transition-all duration-500 ease-in-out" 
+                      style={{ height: `${(serumTubes[idx] / TUBE_CAPACITIES[idx]) * 100}%` }} 
+                    />
+                    {idx === 0 && <div className="absolute w-full border-t-[3px] border-red-600 z-10 opacity-80" style={{ bottom: '50%' }} />}
+                  </div>
+                  <div className="text-white font-black text-lg mt-3 bg-black px-4 py-1 rounded border border-zinc-800">
+                    {serumTubes[idx]}
+                  </div>
+                  <div className="flex flex-col gap-2 mt-4 w-full">
+                     {[0, 1, 2].map(targetIdx => (
+                        targetIdx !== idx && (
+                           <button 
+                             key={targetIdx} 
+                             onClick={() => handleSerumPour(idx, targetIdx)}
+                             disabled={serumTubes[idx] === 0 || serumTubes[targetIdx] === TUBE_CAPACITIES[targetIdx] || serumLoading}
+                             className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded-lg text-xs font-bold tracking-widest disabled:opacity-30 disabled:hover:bg-zinc-800 transition-colors"
+                           >
+                             POUR TO {targetIdx + 1}
+                           </button>
+                        )
+                     ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {serumLoading && (
+              <div className="text-center font-mono text-xs text-green-500 animate-pulse tracking-widest">
+                ANALYZING VOLUME...
+              </div>
+            )}
           </div>
         </div>
       )}
