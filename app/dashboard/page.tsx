@@ -12,17 +12,18 @@ const TOTAL_INVENTORY_SLOTS = 8;
 const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: boolean }>> = {
   'HOSPITAL': { 
     'HOSP123': { item: 'Viral Culture', isCritical: true },
-    'MEDKIT99': { item: 'First Aid Kit', isCritical: false }
+    'MEDKIT99': { item: 'First Aid Kit', isCritical: false },
+    'IVBAG008': { item: 'IV Bag', isCritical: false }
   },
   'PHARMACY': { 
-    'PHAR456': { item: 'Chemical Solvent', isCritical: false }, // No longer critical, Component B is
+    'PHAR456': { item: 'Chemical Solvent', isCritical: false }, 
     'PILLS01': { item: 'Adrenaline Shot', isCritical: false },
     'LABCOAT004': { item: 'Lab Coat', isCritical: false },
     'CHESS005': { item: 'Chess Puzzle', isCritical: false },
     'COMPONENT-B-006': { item: 'Component-B Box', isCritical: false }
   },
   'MILITARY BASE': { 
-    'MIL789': { item: 'Stabilizing Isotope', isCritical: false }, // No longer critical, Component C is
+    'MIL789': { item: 'Stabilizing Isotope', isCritical: false }, 
     'KEYCARD': { item: 'Access Card', isCritical: false },
     'JACKET001': { item: 'Soldier Jacket', isCritical: false },
     'POSTER002': { item: 'Crime Scene Poster', isCritical: false },
@@ -41,8 +42,10 @@ const ITEM_IMAGES: Record<string, string> = {
   'Component C': '/component_c.jpg',
   'Lab Coat': '/lab_coat.jpg',
   'Chess Puzzle': '/chess.jpg',
-  'Component-B Box': '/component_c_box.jpg', // Reusing the box image
-  'Component B': '/component_b.jpg'          // The actual component
+  'Component-B Box': '/component_c_box.jpg', 
+  'Component B': '/component_b.jpg',
+  'IV Bag': '/iv_bag.jpg',
+  'IV Bag (Decoded)': '/iv_bag.jpg' // Same image, indicates solved state
 };
 
 const EXAMINE_IMAGES: Record<string, string> = {
@@ -60,8 +63,8 @@ const CHESS_ANSWER_KEY = {
 };
 const CHESS_PIECES = ['Bishop', 'Rook', 'Queen', 'King'];
 
-const BOX_PASSCODE = '4716';    // Military Base Component C Passcode
-const BOX_B_PASSCODE = '8250';  // Pharmacy Component B Passcode (Change this later!)
+const BOX_PASSCODE = '4716';    
+const BOX_B_PASSCODE = '8250';  
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -89,6 +92,12 @@ export default function DashboardPage() {
     L1: '', L2: '', L3: 'Knight', R1: 'Pawn', R2: '', R3: ''
   });
   const [chessMessage, setChessMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+
+  // IV Bag Puzzle State
+  const [showIVBagPuzzle, setShowIVBagPuzzle] = useState(false);
+  const [ivBagAnswers, setIvBagAnswers] = useState<string[]>(['', '', '', '']);
+  const [ivBagMessage, setIvBagMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [ivBagLoading, setIvBagLoading] = useState(false);
 
   // Component C Box State
   const [showBoxPuzzle, setShowBoxPuzzle] = useState(false);
@@ -122,7 +131,7 @@ export default function DashboardPage() {
       }
 
       if (!data.current_room) {
-        const assignedRoom = 'PHARMACY'; // Temporary override for testing
+        const assignedRoom = 'HOSPITAL'; // TEMPORARILY OVERRIDDEN TO TEST HOSPITAL
         const { data: updatedData, error: updateError } = await supabase
           .from('teams')
           .update({ current_room: assignedRoom, has_started: true })
@@ -307,6 +316,19 @@ export default function DashboardPage() {
       return;
     }
 
+    if (selectedItem === 'IV Bag') {
+      setShowIVBagPuzzle(true);
+      setItemActionMessage(null);
+      setIvBagMessage(null);
+      setIvBagAnswers(['', '', '', '']);
+      return;
+    }
+
+    if (selectedItem === 'IV Bag (Decoded)') {
+      setItemActionMessage("SEQUENCE VERIFIED. EXTRACTED KEY: 2");
+      return;
+    }
+
     if (selectedItem === 'Lab Coat') {
       setItemActionMessage("NOTE FOUND: 4 uftu uvcft xfsf vtfe");
       return;
@@ -341,6 +363,7 @@ export default function DashboardPage() {
     // Room completion dependencies for discarding
     const hasClearedMilitaryBase = team.visited_rooms?.includes('MILITARY BASE');
     const hasClearedPharmacy = team.visited_rooms?.includes('PHARMACY');
+    const hasClearedHospital = team.visited_rooms?.includes('HOSPITAL');
 
     if (selectedItem === 'Soldier Jacket' || selectedItem === 'Crime Scene Poster') {
       if (!hasClearedMilitaryBase) {
@@ -351,6 +374,13 @@ export default function DashboardPage() {
 
     if (selectedItem === 'Lab Coat' || selectedItem === 'Chess Puzzle') {
       if (!hasClearedPharmacy) {
+        setItemActionMessage("This item can not be discarded right now.");
+        return;
+      }
+    }
+
+    if (selectedItem === 'IV Bag' || selectedItem === 'IV Bag (Decoded)') {
+      if (!hasClearedHospital) {
         setItemActionMessage("This item can not be discarded right now.");
         return;
       }
@@ -421,6 +451,38 @@ export default function DashboardPage() {
         type: 'error' 
       });
     }
+  };
+
+  const handleIVBagSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const enteredSequence = ivBagAnswers.join('');
+    if (enteredSequence !== 'CDBA') {
+      setIvBagMessage({ text: "INCORRECT ADMISSION SEQUENCE.", type: 'error' });
+      return;
+    }
+
+    setIvBagLoading(true);
+    
+    const newInventory = team.inventory.filter((i: string) => i !== 'IV Bag');
+    newInventory.push('IV Bag (Decoded)');
+
+    const { data: updatedTeam, error } = await supabase
+      .from('teams')
+      .update({ inventory: newInventory })
+      .eq('id', team.id)
+      .select()
+      .single();
+
+    if (!error && updatedTeam) {
+      setTeam(updatedTeam);
+      setShowIVBagPuzzle(false);
+      setSelectedItem('IV Bag (Decoded)');
+      setItemActionMessage("SEQUENCE VERIFIED. EXTRACTED KEY: 2");
+    } else {
+      setIvBagMessage({ text: "Database sync failed.", type: "error" });
+    }
+    setIvBagLoading(false);
   };
 
   // Logic for Component C Box
@@ -704,7 +766,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Item Interaction Menu Overlay */}
-      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && (
+      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && !showIVBagPuzzle && (
         <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in">
             <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
@@ -743,6 +805,60 @@ export default function DashboardPage() {
                 <Trash2 className="w-5 h-5" /> {actionLoading ? 'DISCARDING...' : 'DISCARD'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* IV Bag Puzzle Overlay */}
+      {showIVBagPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-md rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowIVBagPuzzle(false); setIvBagMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">Arrange IV Bags</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Arrange patient bags by order of admission.</p>
+            
+            {ivBagMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${ivBagMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {ivBagMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleIVBagSubmit}>
+              <div className="flex justify-between gap-2 mb-8">
+                {['1st', '2nd', '3rd', '4th'].map((label, index) => (
+                  <div key={index} className="flex-1 flex flex-col gap-2">
+                    <label className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center">{label}</label>
+                    <select 
+                      value={ivBagAnswers[index]}
+                      onChange={(e) => {
+                        const newAns = [...ivBagAnswers];
+                        newAns[index] = e.target.value;
+                        setIvBagAnswers(newAns);
+                      }}
+                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-center font-bold"
+                      required
+                    >
+                      <option value="" disabled>-</option>
+                      {['A', 'B', 'C', 'D'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              
+              <button 
+                type="submit" 
+                disabled={ivBagLoading}
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {ivBagLoading ? 'VERIFYING...' : 'VERIFY SEQUENCE'}
+              </button>
+            </form>
           </div>
         </div>
       )}
