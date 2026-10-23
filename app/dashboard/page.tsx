@@ -11,10 +11,12 @@ const TOTAL_INVENTORY_SLOTS = 8;
 
 const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: boolean }>> = {
   'HOSPITAL': { 
-    'HOSP123': { item: 'Viral Culture', isCritical: true },
+    'HOSP123': { item: 'Viral Culture', isCritical: false }, // Component A is now the critical item
     'MEDKIT99': { item: 'First Aid Kit', isCritical: false },
     'IVBAG008': { item: 'IV Bag', isCritical: false },
-    'TESTTUBE009': { item: 'Test Tube', isCritical: false }
+    'TESTTUBE009': { item: 'Test Tube', isCritical: false },
+    'CARDS010': { item: 'Cards', isCritical: false },
+    'COMPONENT-A-011': { item: 'Component-A Box', isCritical: false }
   },
   'PHARMACY': { 
     'PHAR456': { item: 'Chemical Solvent', isCritical: false }, 
@@ -49,7 +51,11 @@ const ITEM_IMAGES: Record<string, string> = {
   'IV Bag (Decoded)': '/iv_bag.jpg',
   'Test Tube': '/test_tube.jpg',
   'Serum': '/serum.jpg',
-  'Serum (Decoded)': '/serum.jpg'
+  'Serum (Decoded)': '/serum.jpg',
+  'Cards': '/cards.jpg',
+  'Cards (Decoded)': '/cards.jpg',
+  'Component-A Box': '/component_c_box.jpg',
+  'Component A': '/component_a.jpg'
 };
 
 const EXAMINE_IMAGES: Record<string, string> = {
@@ -72,6 +78,7 @@ const TUBE_CAPACITIES = [8, 5, 3];
 
 const BOX_PASSCODE = '4716';    
 const BOX_B_PASSCODE = '8250';  
+const BOX_A_PASSCODE = '3244';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -115,6 +122,11 @@ export default function DashboardPage() {
   const [serumMessage, setSerumMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
   const [serumLoading, setSerumLoading] = useState(false);
 
+  const [showCardsPuzzle, setShowCardsPuzzle] = useState(false);
+  const [cardsAnswers, setCardsAnswers] = useState<string[]>(['', '', '', '']);
+  const [cardsMessage, setCardsMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [cardsLoading, setCardsLoading] = useState(false);
+
   // Component C Box State
   const [showBoxPuzzle, setShowBoxPuzzle] = useState(false);
   const [boxCodeArr, setBoxCodeArr] = useState(['', '', '', '']);
@@ -126,6 +138,12 @@ export default function DashboardPage() {
   const [boxBCodeArr, setBoxBCodeArr] = useState(['', '', '', '']);
   const [boxBMessage, setBoxBMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
   const [boxBLoading, setBoxBLoading] = useState(false);
+
+  // Component A Box State
+  const [showBoxAPuzzle, setShowBoxAPuzzle] = useState(false);
+  const [boxACodeArr, setBoxACodeArr] = useState(['', '', '', '']);
+  const [boxAMessage, setBoxAMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [boxALoading, setBoxALoading] = useState(false);
 
   useEffect(() => {
     const initDashboard = async () => {
@@ -301,74 +319,43 @@ export default function DashboardPage() {
     if (!selectedItem) return;
 
     if (selectedItem === 'Crime Scene Poster') {
-      setShowPosterPuzzle(true);
-      setItemActionMessage(null);
-      setPosterMessage(null);
-      setPosterAnswers({});
-      return;
+      setShowPosterPuzzle(true); setItemActionMessage(null); setPosterMessage(null); setPosterAnswers({}); return;
     }
-
     if (selectedItem === 'Component-C Box') {
-      setShowBoxPuzzle(true);
-      setItemActionMessage(null);
-      setBoxMessage(null);
-      setBoxCodeArr(['', '', '', '']);
-      return;
+      setShowBoxPuzzle(true); setItemActionMessage(null); setBoxMessage(null); setBoxCodeArr(['', '', '', '']); return;
     }
-
     if (selectedItem === 'Component-B Box') {
-      setShowBoxBPuzzle(true);
-      setItemActionMessage(null);
-      setBoxBMessage(null);
-      setBoxBCodeArr(['', '', '', '']);
-      return;
+      setShowBoxBPuzzle(true); setItemActionMessage(null); setBoxBMessage(null); setBoxBCodeArr(['', '', '', '']); return;
     }
-
+    if (selectedItem === 'Component-A Box') {
+      setShowBoxAPuzzle(true); setItemActionMessage(null); setBoxAMessage(null); setBoxACodeArr(['', '', '', '']); return;
+    }
     if (selectedItem === 'Chess Puzzle') {
-      setShowChessPuzzle(true);
-      setItemActionMessage(null);
-      setChessMessage(null);
-      setChessAnswers({ L1: '', L2: '', L3: 'Knight', R1: 'Pawn', R2: '', R3: '' });
-      return;
+      setShowChessPuzzle(true); setItemActionMessage(null); setChessMessage(null); setChessAnswers({ L1: '', L2: '', L3: 'Knight', R1: 'Pawn', R2: '', R3: '' }); return;
     }
-
     if (selectedItem === 'IV Bag') {
-      setShowIVBagPuzzle(true);
-      setItemActionMessage(null);
-      setIvBagMessage(null);
-      setIvBagAnswers(['', '', '', '']);
-      return;
+      setShowIVBagPuzzle(true); setItemActionMessage(null); setIvBagMessage(null); setIvBagAnswers(['', '', '', '']); return;
     }
-
     if (selectedItem === 'IV Bag (Decoded)') {
-      setItemActionMessage("SEQUENCE VERIFIED. EXTRACTED KEY: 2");
-      return;
+      setItemActionMessage("SEQUENCE VERIFIED. EXTRACTED KEY: 2"); return;
     }
-
     if (selectedItem === 'Test Tube') {
-      setShowBloodPuzzle(true);
-      setItemActionMessage(null);
-      setBloodMessage(null);
-      setBloodAnswers(['', '']);
-      return;
+      setShowBloodPuzzle(true); setItemActionMessage(null); setBloodMessage(null); setBloodAnswers(['', '']); return;
     }
-
     if (selectedItem === 'Serum') {
-      setShowSerumPuzzle(true);
-      setItemActionMessage(null);
-      setSerumMessage(null);
-      setSerumTubes([8, 0, 0]);
-      return;
+      setShowSerumPuzzle(true); setItemActionMessage(null); setSerumMessage(null); setSerumTubes([8, 0, 0]); return;
     }
-
     if (selectedItem === 'Serum (Decoded)') {
-      setItemActionMessage("SYNTHESIS COMPLETE. EXTRACTED KEY: 4");
-      return;
+      setItemActionMessage("SYNTHESIS COMPLETE. EXTRACTED KEY: 4"); return;
     }
-
+    if (selectedItem === 'Cards') {
+      setShowCardsPuzzle(true); setItemActionMessage(null); setCardsMessage(null); setCardsAnswers(['', '', '', '']); return;
+    }
+    if (selectedItem === 'Cards (Decoded)') {
+      setItemActionMessage("SEQUENCE VERIFIED. EXTRACTED KEY: 4"); return;
+    }
     if (selectedItem === 'Lab Coat') {
-      setItemActionMessage("NOTE FOUND: 4 uftu uvcft xfsf vtfe");
-      return;
+      setItemActionMessage("NOTE FOUND: 4 uftu uvcft xfsf vtfe"); return;
     }
 
     const imageSrc = EXAMINE_IMAGES[selectedItem];
@@ -391,7 +378,7 @@ export default function DashboardPage() {
     if (!team || !selectedItem) return;
 
     // Items that can NEVER be discarded
-    const nonDiscardable = ['Component-C Box', 'Component C', 'Component-B Box', 'Component B'];
+    const nonDiscardable = ['Component-C Box', 'Component C', 'Component-B Box', 'Component B', 'Component-A Box', 'Component A'];
     if (nonDiscardable.includes(selectedItem)) {
       setItemActionMessage("This item can not be discarded.");
       return;
@@ -416,7 +403,7 @@ export default function DashboardPage() {
       }
     }
 
-    if (['IV Bag', 'IV Bag (Decoded)', 'Test Tube', 'Serum', 'Serum (Decoded)'].includes(selectedItem)) {
+    if (['IV Bag', 'IV Bag (Decoded)', 'Test Tube', 'Serum', 'Serum (Decoded)', 'Cards', 'Cards (Decoded)'].includes(selectedItem)) {
       if (!hasClearedHospital) {
         setItemActionMessage("This item can not be discarded right now.");
         return;
@@ -593,6 +580,31 @@ export default function DashboardPage() {
     setIvBagLoading(false);
   };
 
+  const handleCardsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cardsAnswers.join('') !== 'BGRY') {
+      setCardsMessage({ text: "INCORRECT COLOR SEQUENCE.", type: 'error' });
+      return;
+    }
+
+    setCardsLoading(true);
+    const newInventory = team.inventory.filter((i: string) => i !== 'Cards');
+    newInventory.push('Cards (Decoded)');
+
+    const { data: updatedTeam, error } = await supabase
+      .from('teams').update({ inventory: newInventory }).eq('id', team.id).select().single();
+
+    if (!error && updatedTeam) {
+      setTeam(updatedTeam);
+      setShowCardsPuzzle(false);
+      setSelectedItem('Cards (Decoded)');
+      setItemActionMessage("SEQUENCE VERIFIED. EXTRACTED KEY: 4");
+    } else {
+      setCardsMessage({ text: "Database sync failed.", type: "error" });
+    }
+    setCardsLoading(false);
+  };
+
   // Logic for Component C Box
   const handleBoxChange = (index: number, value: string) => {
     if (!/^[0-9]*$/.test(value)) return;
@@ -745,6 +757,82 @@ export default function DashboardPage() {
     setBoxBLoading(false);
   };
 
+  // Logic for Component A Box
+  const handleBoxAChange = (index: number, value: string) => {
+    if (!/^[0-9]*$/.test(value)) return;
+    const newArr = [...boxACodeArr];
+    newArr[index] = value.slice(-1);
+    setBoxACodeArr(newArr);
+    
+    if (value && index < 3) {
+      document.getElementById(`box-a-input-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleBoxASubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const enteredCode = boxACodeArr.join('');
+    
+    if (enteredCode !== BOX_A_PASSCODE) {
+      setBoxAMessage({ text: "ACCESS DENIED. INVALID PASSCODE.", type: "error" });
+      return;
+    }
+
+    setBoxALoading(true);
+    
+    const newInventory = team.inventory.filter((i: string) => i !== 'Component-A Box');
+    newInventory.push('Component A');
+
+    const newVisitedRooms = [...(team.visited_rooms || []), team.current_room];
+    const remainingRooms = INITIAL_ROOMS.filter(r => !newVisitedRooms.includes(r));
+    let nextRoom = FINAL_ROOM;
+
+    if (remainingRooms.length > 0) {
+      const { data: allTeams } = await supabase.from('teams').select('current_room');
+      const roomCounts = remainingRooms.reduce((acc, room) => {
+        acc[room] = 0;
+        return acc;
+      }, {} as Record<string, number>);
+
+      allTeams?.forEach((t) => {
+        if (t.current_room && roomCounts[t.current_room] !== undefined) {
+          roomCounts[t.current_room]++;
+        }
+      });
+
+      nextRoom = remainingRooms[0];
+      let minCount = roomCounts[nextRoom];
+      
+      for (const room of remainingRooms) {
+        if (roomCounts[room] < minCount) {
+          minCount = roomCounts[room];
+          nextRoom = room;
+        }
+      }
+    }
+
+    const { data: updatedTeam, error: updateError } = await supabase
+      .from('teams')
+      .update({
+        inventory: newInventory,
+        visited_rooms: newVisitedRooms,
+        current_room: nextRoom
+      })
+      .eq('id', team.id)
+      .select()
+      .single();
+
+    if (!updateError && updatedTeam) {
+      setTeam(updatedTeam);
+      setShowBoxAPuzzle(false);
+      setSelectedItem(null);
+      setMessage({ text: `CRITICAL ITEM ACQUIRED: Component A. Routing to next sector...`, type: "success" });
+    } else {
+      setBoxAMessage({ text: "Database sync failed. Try again.", type: "error" });
+    }
+    setBoxALoading(false);
+  };
+
   const closeMenu = () => {
     setSelectedItem(null);
     setItemActionMessage(null);
@@ -874,7 +962,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Item Interaction Menu Overlay */}
-      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && !showIVBagPuzzle && !showBloodPuzzle && !showSerumPuzzle && (
+      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && !showBoxAPuzzle && !showIVBagPuzzle && !showBloodPuzzle && !showSerumPuzzle && !showCardsPuzzle && (
         <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in">
             <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
@@ -913,6 +1001,63 @@ export default function DashboardPage() {
                 <Trash2 className="w-5 h-5" /> {actionLoading ? 'DISCARDING...' : 'DISCARD'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hospital Symptom Cards Puzzle */}
+      {showCardsPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-md rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowCardsPuzzle(false); setCardsMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">Arrange Symptom Cards</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Arrange the colored cards by urgency time.</p>
+            
+            {cardsMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${cardsMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {cardsMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleCardsSubmit}>
+              <div className="flex justify-between gap-2 mb-8">
+                {['1st', '2nd', '3rd', '4th'].map((label, index) => (
+                  <div key={index} className="flex-1 flex flex-col gap-2">
+                    <label className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center">{label}</label>
+                    <select 
+                      value={cardsAnswers[index]} 
+                      onChange={(e) => { 
+                        const newAns = [...cardsAnswers]; 
+                        newAns[index] = e.target.value; 
+                        setCardsAnswers(newAns); 
+                      }}
+                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-center font-bold" 
+                      required
+                    >
+                      <option value="" disabled>-</option>
+                      {['B', 'G', 'R', 'Y'].map(opt => (
+                        <option key={opt} value={opt}>
+                          {opt === 'B' ? 'Blue' : opt === 'G' ? 'Green' : opt === 'R' ? 'Red' : 'Yellow'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={cardsLoading} 
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {cardsLoading ? 'VERIFYING...' : 'VERIFY SEQUENCE'}
+              </button>
+            </form>
           </div>
         </div>
       )}
@@ -1076,6 +1221,51 @@ export default function DashboardPage() {
                 className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
               >
                 {ivBagLoading ? 'VERIFYING...' : 'VERIFY SEQUENCE'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Component-A Box 4-Digit Lock Overlay */}
+      {showBoxAPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
+            <button 
+              onClick={() => { setShowBoxAPuzzle(false); setBoxAMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center">Enter Passcode</h3>
+            
+            {boxAMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${boxAMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {boxAMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleBoxASubmit}>
+              <div className="flex justify-center gap-3 mb-8">
+                {boxACodeArr.map((digit, index) => (
+                  <input 
+                    key={index}
+                    id={`box-a-input-${index}`}
+                    type="text" 
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleBoxAChange(index, e.target.value)}
+                    className="w-14 h-16 bg-black border-2 border-zinc-700 rounded-lg text-center text-white text-3xl font-bold focus:border-red-500 outline-none transition-colors font-mono shadow-inner"
+                  />
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={boxALoading}
+                className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {boxALoading ? 'DECRYPTING...' : 'UNLOCK BOX'}
               </button>
             </form>
           </div>
