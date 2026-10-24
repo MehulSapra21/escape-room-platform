@@ -1094,7 +1094,7 @@ export default function DashboardPage() {
   const isFinalRoom = team.current_room === FINAL_ROOM;
 
   return (
-    <main className="min-h-screen bg-black text-white p-6 pb-24 relative">
+    <main className="min-h-screen bg-black text-white p-6 pb-24 relative overflow-x-hidden">
       <header className="flex justify-between items-center border-b border-zinc-800 pb-4 mb-6 relative z-10">
         <div>
           <h1 className="text-xl font-black text-red-600 tracking-widest">OUTBREAK OS</h1>
