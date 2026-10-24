@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import { ShieldAlert, Fingerprint, FlaskConical, LogOut, X, Search, Link, Trash2 } from 'lucide-react';
+import ScientistLabUI from '../../components/ScientistLabUI';
 
 const INITIAL_ROOMS = ['HOSPITAL', 'PHARMACY', 'MILITARY BASE', 'SCIENTIST LAB'];
 const FINAL_ROOM = 'PARTICIPANT LAB';
@@ -67,7 +68,8 @@ const ITEM_IMAGES: Record<string, string> = {
   'Locked iPad': '/ipad.jpg',
   'Unlocked iPad': '/ipad.jpg',
   'Component-D Box': '/component_c_box.jpg',
-  'Component D': '/component_d.jpg'
+  'Component D': '/component_d.jpg',
+  'Antidote': '/antidote.jpg'
 };
 
 const EXAMINE_IMAGES: Record<string, string> = {
@@ -408,6 +410,9 @@ export default function DashboardPage() {
     if (selectedItem === 'Unlocked iPad') {
       setItemActionMessage("the passcode for the component box is 7355"); return;
     }
+    if (selectedItem === 'Antidote') {
+      setItemActionMessage("THE FINAL ANTIDOTE. ESCAPE THE FACILITY IMMEDIATELY."); return;
+    }
     if (selectedItem === 'Lab Coat') {
       setItemActionMessage("NOTE FOUND: 4 uftu uvcft xfsf vtfe"); return;
     }
@@ -424,7 +429,44 @@ export default function DashboardPage() {
     }
   };
 
-  const handleCombine = () => {
+  const handleCombine = async () => {
+    if (!team || !selectedItem) return;
+
+    const criticalComponents = ['Component A', 'Component B', 'Component C', 'Component D'];
+    
+    // Check if the user is trying to combine one of the components
+    if (criticalComponents.includes(selectedItem)) {
+      const hasAllComponents = criticalComponents.every(comp => (team.inventory || []).includes(comp));
+      
+      if (hasAllComponents) {
+        setActionLoading(true);
+        // Remove all 4 components and add the Antidote
+        const newInventory = team.inventory.filter((i: string) => !criticalComponents.includes(i));
+        newInventory.push('Antidote');
+
+        const { data: updatedTeam, error } = await supabase
+          .from('teams')
+          .update({ inventory: newInventory })
+          .eq('id', team.id)
+          .select()
+          .single();
+
+        if (!error && updatedTeam) {
+          setTeam(updatedTeam);
+          setSelectedItem(null);
+          setItemActionMessage(null);
+          setMessage({ text: "ANTIDOTE SYNTHESIZED SUCCESSFULLY.", type: "success" });
+        } else {
+          setItemActionMessage("Database sync failed.");
+        }
+        setActionLoading(false);
+        return;
+      } else {
+        setItemActionMessage("SYNTHESIS FAILED. ALL 4 COMPONENTS REQUIRED.");
+        return;
+      }
+    }
+
     setItemActionMessage("This item can not be combined with anything.");
   };
 
@@ -432,7 +474,7 @@ export default function DashboardPage() {
     if (!team || !selectedItem) return;
 
     // Items that can NEVER be discarded
-    const nonDiscardable = ['Component-C Box', 'Component C', 'Component-B Box', 'Component B', 'Component-A Box', 'Component A', 'Component-D Box', 'Component D'];
+    const nonDiscardable = ['Component-C Box', 'Component C', 'Component-B Box', 'Component B', 'Component-A Box', 'Component A', 'Component-D Box', 'Component D', 'Antidote'];
     if (nonDiscardable.includes(selectedItem)) {
       setItemActionMessage("This item can not be discarded.");
       return;
@@ -1053,7 +1095,7 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-black text-white p-6 pb-24 relative">
-      <header className="flex justify-between items-center border-b border-zinc-800 pb-4 mb-6">
+      <header className="flex justify-between items-center border-b border-zinc-800 pb-4 mb-6 relative z-10">
         <div>
           <h1 className="text-xl font-black text-red-600 tracking-widest">OUTBREAK OS</h1>
           <p className="text-xs text-zinc-500 font-mono">TEAM: {team.team_login_id}</p>
@@ -1074,93 +1116,112 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <div className={`border rounded-xl p-6 shadow-2xl mb-8 relative overflow-hidden ${isFinalRoom ? 'bg-blue-950/20 border-blue-900/50' : 'bg-zinc-900 border-zinc-700'}`}>
-        <div className={`absolute top-0 left-0 w-1 h-full ${isFinalRoom ? 'bg-blue-500' : 'bg-yellow-500'}`}></div>
-        <h2 className="text-xs text-zinc-400 mb-2 tracking-widest font-semibold uppercase">Current Location Target</h2>
-        <p className={`text-3xl font-black tracking-wider uppercase mb-3 ${isFinalRoom ? 'text-blue-400' : 'text-white'}`}>
-          {team.current_room}
-        </p>
-        <p className="text-sm text-zinc-400">
-          {isFinalRoom 
-            ? "You have gathered all critical components. Proceed to the lab immediately to synthesize the final antidote." 
-            : "Infiltrate this sector. Search for items and extract the critical component code to proceed."}
-        </p>
-      </div>
-
-      {!isFinalRoom && (
-        <div className="mb-8">
-          <form onSubmit={handleCodeSubmit} className="flex gap-2">
-            <div className="relative flex-1">
-              <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
-              <input 
-                type="text" 
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                placeholder="TYPE CODE"
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg py-4 pl-12 pr-4 text-white focus:outline-none focus:border-red-600 transition-colors uppercase font-mono tracking-widest text-sm"
-                required
-              />
-            </div>
-            <button 
-              type="submit" 
-              disabled={codeLoading}
-              className="bg-red-700 hover:bg-red-600 text-white font-bold px-6 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {codeLoading ? '...' : 'ADD ITEM'}
-            </button>
-          </form>
-          {message && (
-            <p className={`mt-3 text-xs font-mono tracking-wide ${message.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
-              {message.text}
+      {/* DYNAMIC ROOM RENDERING */}
+      {team.current_room === 'SCIENTIST LAB' ? (
+        <ScientistLabUI 
+          team={team}
+          roomCode={roomCode}
+          setRoomCode={setRoomCode}
+          handleCodeSubmit={handleCodeSubmit}
+          codeLoading={codeLoading}
+          message={message}
+          inventorySlots={inventorySlots}
+          currentInventory={currentInventory}
+          ITEM_IMAGES={ITEM_IMAGES}
+          setSelectedItem={setSelectedItem}
+        />
+      ) : (
+        <>
+          {/* STANDARD UI FOR ALL OTHER ROOMS */}
+          <div className={`border rounded-xl p-6 shadow-2xl mb-8 relative overflow-hidden ${isFinalRoom ? 'bg-blue-950/20 border-blue-900/50' : 'bg-zinc-900 border-zinc-700'}`}>
+            <div className={`absolute top-0 left-0 w-1 h-full ${isFinalRoom ? 'bg-blue-500' : 'bg-yellow-500'}`}></div>
+            <h2 className="text-xs text-zinc-400 mb-2 tracking-widest font-semibold uppercase">Current Location Target</h2>
+            <p className={`text-3xl font-black tracking-wider uppercase mb-3 ${isFinalRoom ? 'text-blue-400' : 'text-white'}`}>
+              {team.current_room}
             </p>
+            <p className="text-sm text-zinc-400">
+              {isFinalRoom 
+                ? "You have gathered all critical components. Proceed to the lab immediately to synthesize the final antidote." 
+                : "Infiltrate this sector. Search for items and extract the critical component code to proceed."}
+            </p>
+          </div>
+
+          {!isFinalRoom && (
+            <div className="mb-8">
+              <form onSubmit={handleCodeSubmit} className="flex gap-2">
+                <div className="relative flex-1">
+                  <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                  <input 
+                    type="text" 
+                    value={roomCode}
+                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                    placeholder="TYPE CODE"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg py-4 pl-12 pr-4 text-white focus:outline-none focus:border-red-600 transition-colors uppercase font-mono tracking-widest text-sm"
+                    required
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={codeLoading}
+                  className="bg-red-700 hover:bg-red-600 text-white font-bold px-6 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {codeLoading ? '...' : 'ADD ITEM'}
+                </button>
+              </form>
+              {message && (
+                <p className={`mt-3 text-xs font-mono tracking-wide ${message.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+                  {message.text}
+                </p>
+              )}
+            </div>
           )}
-        </div>
+
+          <div>
+            <h2 className="text-3xl font-black text-blue-500 mb-4 tracking-wider uppercase">INVENTORY</h2>
+            <div className="grid grid-cols-4 gap-3">
+              {inventorySlots.map((_, index) => {
+                const item = currentInventory[index];
+                const hasImage = item && ITEM_IMAGES[item];
+
+                return (
+                  <button 
+                    key={index} 
+                    onClick={() => item && setSelectedItem(item)}
+                    disabled={!item}
+                    className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-1 text-center transition-all duration-500 overflow-hidden outline-none ${
+                      item 
+                        ? 'bg-zinc-800/80 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.35)] scale-100 hover:scale-105 cursor-pointer' 
+                        : 'bg-black border-blue-800/60 scale-95 cursor-default'
+                    }`}
+                  >
+                    {item ? (
+                      hasImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img 
+                          src={ITEM_IMAGES[item]} 
+                          alt={item} 
+                          className="w-full h-full object-contain rounded-md"
+                        />
+                      ) : (
+                        <>
+                          <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mb-1">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+                          </div>
+                          <span className="text-[9px] font-bold text-blue-400 tracking-wider uppercase truncate w-full px-1">
+                            {item}
+                          </span>
+                        </>
+                      )
+                    ) : (
+                      <span className="text-[10px] text-zinc-800 font-mono">EMPTY</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
       )}
-
-      <div>
-        <h2 className="text-3xl font-black text-blue-500 mb-4 tracking-wider uppercase">INVENTORY</h2>
-        <div className="grid grid-cols-4 gap-3">
-          {inventorySlots.map((_, index) => {
-            const item = currentInventory[index];
-            const hasImage = item && ITEM_IMAGES[item];
-
-            return (
-              <button 
-                key={index} 
-                onClick={() => item && setSelectedItem(item)}
-                disabled={!item}
-                className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-1 text-center transition-all duration-500 overflow-hidden outline-none ${
-                  item 
-                    ? 'bg-zinc-800/80 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.35)] scale-100 hover:scale-105 cursor-pointer' 
-                    : 'bg-black border-blue-800/60 scale-95 cursor-default'
-                }`}
-              >
-                {item ? (
-                  hasImage ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img 
-                      src={ITEM_IMAGES[item]} 
-                      alt={item} 
-                      className="w-full h-full object-contain rounded-md"
-                    />
-                  ) : (
-                    <>
-                      <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mb-1">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
-                      </div>
-                      <span className="text-[9px] font-bold text-blue-400 tracking-wider uppercase truncate w-full px-1">
-                        {item}
-                      </span>
-                    </>
-                  )
-                ) : (
-                  <span className="text-[10px] text-zinc-800 font-mono">EMPTY</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Item Interaction Menu Overlay */}
       {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && !showBoxAPuzzle && !showIVBagPuzzle && !showBloodPuzzle && !showSerumPuzzle && !showCardsPuzzle && !showChartPuzzle && !showSliderPuzzle && !showIpadPuzzle && !showBoxDPuzzle && (
