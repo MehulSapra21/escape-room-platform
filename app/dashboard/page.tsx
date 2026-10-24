@@ -11,7 +11,7 @@ const TOTAL_INVENTORY_SLOTS = 8;
 
 const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: boolean }>> = {
   'HOSPITAL': { 
-    'HOSP123': { item: 'Viral Culture', isCritical: false }, // Component A is now the critical item
+    'HOSP123': { item: 'Viral Culture', isCritical: false },
     'MEDKIT99': { item: 'First Aid Kit', isCritical: false },
     'IVBAG008': { item: 'IV Bag', isCritical: false },
     'TESTTUBE009': { item: 'Test Tube', isCritical: false },
@@ -33,8 +33,12 @@ const ROOM_CODES: Record<string, Record<string, { item: string; isCritical: bool
     'COMPONENT-C-003': { item: 'Component-C Box', isCritical: false }
   },
   'SCIENTIST LAB': { 
-    'LAB000': { item: 'Catalyst Enzyme', isCritical: true },
-    'NOTES55': { item: 'Research Logs', isCritical: false }
+    'LAB000': { item: 'Catalyst Enzyme', isCritical: false },
+    'NOTES55': { item: 'Research Logs', isCritical: false },
+    'CHART012': { item: 'Blood Chart', isCritical: false },
+    'SLIDER013': { item: 'Chem Tube', isCritical: false },
+    'IPAD014': { item: 'Locked iPad', isCritical: false },
+    'COMPONENT-D-015': { item: 'Component-D Box', isCritical: false }
   },
 };
 
@@ -55,7 +59,15 @@ const ITEM_IMAGES: Record<string, string> = {
   'Cards': '/cards.jpg',
   'Cards (Decoded)': '/cards.jpg',
   'Component-A Box': '/component_c_box.jpg',
-  'Component A': '/component_a.jpg'
+  'Component A': '/component_a.jpg',
+  'Blood Chart': '/blood_chart.jpg',
+  'Blood Chart (Decoded)': '/blood_chart.jpg',
+  'Chem Tube': '/chem_tube.jpg',
+  'Chem Tube (Decoded)': '/chem_tube.jpg',
+  'Locked iPad': '/ipad.jpg',
+  'Unlocked iPad': '/ipad.jpg',
+  'Component-D Box': '/component_c_box.jpg',
+  'Component D': '/component_d.jpg'
 };
 
 const EXAMINE_IMAGES: Record<string, string> = {
@@ -79,6 +91,8 @@ const TUBE_CAPACITIES = [8, 5, 3];
 const BOX_PASSCODE = '4716';    
 const BOX_B_PASSCODE = '8250';  
 const BOX_A_PASSCODE = '3244';
+const IPAD_PASSCODE = '9158';
+const BOX_D_PASSCODE = '7355';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -127,19 +141,38 @@ export default function DashboardPage() {
   const [cardsMessage, setCardsMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
   const [cardsLoading, setCardsLoading] = useState(false);
 
-  // Component C Box State
+  // Scientist Lab Puzzles
+  const [showChartPuzzle, setShowChartPuzzle] = useState(false);
+  const [chartGrid, setChartGrid] = useState<boolean[]>(Array(9).fill(false));
+  const [chartMessage, setChartMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [chartLoading, setChartLoading] = useState(false);
+
+  const [showSliderPuzzle, setShowSliderPuzzle] = useState(false);
+  const [sliderValues, setSliderValues] = useState<number[]>([0, 0, 0]);
+  const [sliderMessage, setSliderMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [sliderLoading, setSliderLoading] = useState(false);
+
+  const [showIpadPuzzle, setShowIpadPuzzle] = useState(false);
+  const [ipadCodeArr, setIpadCodeArr] = useState(['', '', '', '']);
+  const [ipadMessage, setIpadMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [ipadLoading, setIpadLoading] = useState(false);
+
+  const [showBoxDPuzzle, setShowBoxDPuzzle] = useState(false);
+  const [boxDCodeArr, setBoxDCodeArr] = useState(['', '', '', '']);
+  const [boxDMessage, setBoxDMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
+  const [boxDLoading, setBoxDLoading] = useState(false);
+
+  // Component Boxes (Previous)
   const [showBoxPuzzle, setShowBoxPuzzle] = useState(false);
   const [boxCodeArr, setBoxCodeArr] = useState(['', '', '', '']);
   const [boxMessage, setBoxMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
   const [boxLoading, setBoxLoading] = useState(false);
 
-  // Component B Box State
   const [showBoxBPuzzle, setShowBoxBPuzzle] = useState(false);
   const [boxBCodeArr, setBoxBCodeArr] = useState(['', '', '', '']);
   const [boxBMessage, setBoxBMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
   const [boxBLoading, setBoxBLoading] = useState(false);
 
-  // Component A Box State
   const [showBoxAPuzzle, setShowBoxAPuzzle] = useState(false);
   const [boxACodeArr, setBoxACodeArr] = useState(['', '', '', '']);
   const [boxAMessage, setBoxAMessage] = useState<{ text: string, type: 'error' | 'success' } | null>(null);
@@ -165,7 +198,7 @@ export default function DashboardPage() {
       }
 
       if (!data.current_room) {
-        const assignedRoom = 'HOSPITAL'; // TEMPORARILY OVERRIDDEN TO TEST HOSPITAL
+        const assignedRoom = 'SCIENTIST LAB'; // TEMPORARILY OVERRIDDEN TO TEST SCIENTIST LAB
         const { data: updatedData, error: updateError } = await supabase
           .from('teams')
           .update({ current_room: assignedRoom, has_started: true })
@@ -330,6 +363,9 @@ export default function DashboardPage() {
     if (selectedItem === 'Component-A Box') {
       setShowBoxAPuzzle(true); setItemActionMessage(null); setBoxAMessage(null); setBoxACodeArr(['', '', '', '']); return;
     }
+    if (selectedItem === 'Component-D Box') {
+      setShowBoxDPuzzle(true); setItemActionMessage(null); setBoxDMessage(null); setBoxDCodeArr(['', '', '', '']); return;
+    }
     if (selectedItem === 'Chess Puzzle') {
       setShowChessPuzzle(true); setItemActionMessage(null); setChessMessage(null); setChessAnswers({ L1: '', L2: '', L3: 'Knight', R1: 'Pawn', R2: '', R3: '' }); return;
     }
@@ -353,6 +389,24 @@ export default function DashboardPage() {
     }
     if (selectedItem === 'Cards (Decoded)') {
       setItemActionMessage("SEQUENCE VERIFIED. EXTRACTED KEY: 4"); return;
+    }
+    if (selectedItem === 'Blood Chart') {
+      setShowChartPuzzle(true); setItemActionMessage(null); setChartMessage(null); setChartGrid(Array(9).fill(false)); return;
+    }
+    if (selectedItem === 'Blood Chart (Decoded)') {
+      setItemActionMessage("PATTERN RECOGNIZED. KEY PART 1: 9"); return;
+    }
+    if (selectedItem === 'Chem Tube') {
+      setShowSliderPuzzle(true); setItemActionMessage(null); setSliderMessage(null); setSliderValues([0, 0, 0]); return;
+    }
+    if (selectedItem === 'Chem Tube (Decoded)') {
+      setItemActionMessage("CALIBRATION PERFECT. KEY PART 2: 1"); return;
+    }
+    if (selectedItem === 'Locked iPad') {
+      setShowIpadPuzzle(true); setItemActionMessage(null); setIpadMessage(null); setIpadCodeArr(['', '', '', '']); return;
+    }
+    if (selectedItem === 'Unlocked iPad') {
+      setItemActionMessage("the passcode for the component box is 7355"); return;
     }
     if (selectedItem === 'Lab Coat') {
       setItemActionMessage("NOTE FOUND: 4 uftu uvcft xfsf vtfe"); return;
@@ -378,7 +432,7 @@ export default function DashboardPage() {
     if (!team || !selectedItem) return;
 
     // Items that can NEVER be discarded
-    const nonDiscardable = ['Component-C Box', 'Component C', 'Component-B Box', 'Component B', 'Component-A Box', 'Component A'];
+    const nonDiscardable = ['Component-C Box', 'Component C', 'Component-B Box', 'Component B', 'Component-A Box', 'Component A', 'Component-D Box', 'Component D'];
     if (nonDiscardable.includes(selectedItem)) {
       setItemActionMessage("This item can not be discarded.");
       return;
@@ -388,6 +442,7 @@ export default function DashboardPage() {
     const hasClearedMilitaryBase = team.visited_rooms?.includes('MILITARY BASE');
     const hasClearedPharmacy = team.visited_rooms?.includes('PHARMACY');
     const hasClearedHospital = team.visited_rooms?.includes('HOSPITAL');
+    const hasClearedScientistLab = team.visited_rooms?.includes('SCIENTIST LAB');
 
     if (selectedItem === 'Soldier Jacket' || selectedItem === 'Crime Scene Poster') {
       if (!hasClearedMilitaryBase) {
@@ -405,6 +460,13 @@ export default function DashboardPage() {
 
     if (['IV Bag', 'IV Bag (Decoded)', 'Test Tube', 'Serum', 'Serum (Decoded)', 'Cards', 'Cards (Decoded)'].includes(selectedItem)) {
       if (!hasClearedHospital) {
+        setItemActionMessage("This item can not be discarded right now.");
+        return;
+      }
+    }
+
+    if (['Blood Chart', 'Blood Chart (Decoded)', 'Chem Tube', 'Chem Tube (Decoded)', 'Locked iPad', 'Unlocked iPad'].includes(selectedItem)) {
+      if (!hasClearedScientistLab) {
         setItemActionMessage("This item can not be discarded right now.");
         return;
       }
@@ -603,6 +665,145 @@ export default function DashboardPage() {
       setCardsMessage({ text: "Database sync failed.", type: "error" });
     }
     setCardsLoading(false);
+  };
+
+  const handleChartSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // 'M' shape indices: 0, 2, 3, 4, 5, 6, 8 (true), 1, 7 (false)
+    const targetM = [true, false, true, true, true, true, true, false, true];
+    const isCorrect = chartGrid.every((val, index) => val === targetM[index]);
+
+    if (!isCorrect) {
+      setChartGrid(Array(9).fill(false));
+      setChartMessage({ text: "INCORRECT PATTERN DETECTED. RESETTING.", type: 'error' });
+      return;
+    }
+
+    setChartLoading(true);
+    const newInventory = team.inventory.filter((i: string) => i !== 'Blood Chart');
+    newInventory.push('Blood Chart (Decoded)');
+
+    const { data: updatedTeam, error } = await supabase
+      .from('teams').update({ inventory: newInventory }).eq('id', team.id).select().single();
+
+    if (!error && updatedTeam) {
+      setTeam(updatedTeam);
+      setShowChartPuzzle(false);
+      setSelectedItem('Blood Chart (Decoded)');
+      setItemActionMessage("PATTERN RECOGNIZED. KEY PART 1: 9");
+    } else {
+      setChartMessage({ text: "Database sync failed.", type: "error" });
+    }
+    setChartLoading(false);
+  };
+
+  const handleSliderSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (sliderValues[0] !== 40 || sliderValues[1] !== 70 || sliderValues[2] !== 20) {
+      setSliderMessage({ text: "CALIBRATION FAILED. CHECK CHEMICAL PROPERTIES.", type: 'error' });
+      return;
+    }
+
+    setSliderLoading(true);
+    const newInventory = team.inventory.filter((i: string) => i !== 'Chem Tube');
+    newInventory.push('Chem Tube (Decoded)');
+
+    const { data: updatedTeam, error } = await supabase
+      .from('teams').update({ inventory: newInventory }).eq('id', team.id).select().single();
+
+    if (!error && updatedTeam) {
+      setTeam(updatedTeam);
+      setShowSliderPuzzle(false);
+      setSelectedItem('Chem Tube (Decoded)');
+      setItemActionMessage("CALIBRATION PERFECT. KEY PART 2: 1");
+    } else {
+      setSliderMessage({ text: "Database sync failed.", type: "error" });
+    }
+    setSliderLoading(false);
+  };
+
+  // Logic for Locked iPad
+  const handleIpadChange = (index: number, value: string) => {
+    if (!/^[0-9]*$/.test(value)) return;
+    const newArr = [...ipadCodeArr];
+    newArr[index] = value.slice(-1);
+    setIpadCodeArr(newArr);
+    if (value && index < 3) document.getElementById(`ipad-input-${index + 1}`)?.focus();
+  };
+
+  const handleIpadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const enteredCode = ipadCodeArr.join('');
+    if (enteredCode !== IPAD_PASSCODE) {
+      setIpadMessage({ text: "ACCESS DENIED. INVALID PASSCODE.", type: "error" });
+      return;
+    }
+
+    setIpadLoading(true);
+    const newInventory = team.inventory.filter((i: string) => i !== 'Locked iPad');
+    newInventory.push('Unlocked iPad');
+
+    const { data: updatedTeam, error } = await supabase
+      .from('teams').update({ inventory: newInventory }).eq('id', team.id).select().single();
+
+    if (!error && updatedTeam) {
+      setTeam(updatedTeam);
+      setShowIpadPuzzle(false);
+      setSelectedItem('Unlocked iPad');
+      setItemActionMessage("the passcode for the component box is 7355");
+    } else {
+      setIpadMessage({ text: "Database sync failed.", type: "error" });
+    }
+    setIpadLoading(false);
+  };
+
+  // Logic for Component D Box
+  const handleBoxDChange = (index: number, value: string) => {
+    if (!/^[0-9]*$/.test(value)) return;
+    const newArr = [...boxDCodeArr];
+    newArr[index] = value.slice(-1);
+    setBoxDCodeArr(newArr);
+    if (value && index < 3) document.getElementById(`box-d-input-${index + 1}`)?.focus();
+  };
+
+  const handleBoxDSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const enteredCode = boxDCodeArr.join('');
+    if (enteredCode !== BOX_D_PASSCODE) {
+      setBoxDMessage({ text: "ACCESS DENIED. INVALID PASSCODE.", type: "error" });
+      return;
+    }
+
+    setBoxDLoading(true);
+    const newInventory = team.inventory.filter((i: string) => i !== 'Component-D Box');
+    newInventory.push('Component D');
+
+    const newVisitedRooms = [...(team.visited_rooms || []), team.current_room];
+    const remainingRooms = INITIAL_ROOMS.filter(r => !newVisitedRooms.includes(r));
+    let nextRoom = FINAL_ROOM;
+
+    if (remainingRooms.length > 0) {
+      const { data: allTeams } = await supabase.from('teams').select('current_room');
+      const roomCounts = remainingRooms.reduce((acc, room) => { acc[room] = 0; return acc; }, {} as Record<string, number>);
+      allTeams?.forEach((t) => { if (t.current_room && roomCounts[t.current_room] !== undefined) roomCounts[t.current_room]++; });
+      nextRoom = remainingRooms[0];
+      let minCount = roomCounts[nextRoom];
+      for (const room of remainingRooms) { if (roomCounts[room] < minCount) { minCount = roomCounts[room]; nextRoom = room; } }
+    }
+
+    const { data: updatedTeam, error: updateError } = await supabase
+      .from('teams').update({ inventory: newInventory, visited_rooms: newVisitedRooms, current_room: nextRoom })
+      .eq('id', team.id).select().single();
+
+    if (!updateError && updatedTeam) {
+      setTeam(updatedTeam);
+      setShowBoxDPuzzle(false);
+      setSelectedItem(null);
+      setMessage({ text: `CRITICAL ITEM ACQUIRED: Component D. Routing to next sector...`, type: "success" });
+    } else {
+      setBoxDMessage({ text: "Database sync failed. Try again.", type: "error" });
+    }
+    setBoxDLoading(false);
   };
 
   // Logic for Component C Box
@@ -962,7 +1163,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Item Interaction Menu Overlay */}
-      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && !showBoxAPuzzle && !showIVBagPuzzle && !showBloodPuzzle && !showSerumPuzzle && !showCardsPuzzle && (
+      {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && !showBoxAPuzzle && !showIVBagPuzzle && !showBloodPuzzle && !showSerumPuzzle && !showCardsPuzzle && !showChartPuzzle && !showSliderPuzzle && !showIpadPuzzle && !showBoxDPuzzle && (
         <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in">
             <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
@@ -1001,6 +1202,124 @@ export default function DashboardPage() {
                 <Trash2 className="w-5 h-5" /> {actionLoading ? 'DISCARDING...' : 'DISCARD'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scientist Lab Chart Puzzle */}
+      {showChartPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button onClick={() => { setShowChartPuzzle(false); setChartMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">Analyze Pattern</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Recreate the visual anomaly found on the chart.</p>
+            {chartMessage && <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${chartMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>{chartMessage.text}</div>}
+            
+            <form onSubmit={handleChartSubmit}>
+              <div className="grid grid-cols-3 gap-2 mb-8 mx-auto w-48 h-48">
+                {chartGrid.map((val, index) => (
+                  <div 
+                    key={index} 
+                    onClick={() => {
+                      const newGrid = [...chartGrid];
+                      newGrid[index] = !newGrid[index];
+                      setChartGrid(newGrid);
+                    }}
+                    className={`w-full h-full border-2 rounded-md cursor-pointer transition-colors ${val ? 'bg-white border-white' : 'bg-black border-zinc-700 hover:border-zinc-500'}`}
+                  />
+                ))}
+              </div>
+              <button type="submit" disabled={chartLoading} className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50">
+                {chartLoading ? 'VERIFYING...' : 'CONFIRM PATTERN'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Scientist Lab Slider Puzzle */}
+      {showSliderPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button onClick={() => { setShowSliderPuzzle(false); setSliderMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-black text-green-500 mb-6 uppercase tracking-widest text-center">Calibrate Spectrometer</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Adjust parameters to match the chemical signature.</p>
+            {sliderMessage && <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${sliderMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>{sliderMessage.text}</div>}
+            
+            <form onSubmit={handleSliderSubmit}>
+              <div className="flex flex-col gap-6 mb-8">
+                {['ACIDITY', 'TOXICITY', 'DENSITY'].map((label, index) => (
+                  <div key={label} className="flex flex-col gap-2">
+                    <div className="flex justify-between text-xs font-bold font-mono text-zinc-400">
+                      <span>{label}</span>
+                      <span className="text-white">{sliderValues[index]}%</span>
+                    </div>
+                    <input 
+                      type="range" min="0" max="100" step="5" value={sliderValues[index]}
+                      onChange={(e) => {
+                        const newVals = [...sliderValues];
+                        newVals[index] = parseInt(e.target.value);
+                        setSliderValues(newVals);
+                      }}
+                      className="w-full accent-green-500 h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer"
+                    />
+                  </div>
+                ))}
+              </div>
+              <button type="submit" disabled={sliderLoading} className="w-full bg-green-700 hover:bg-green-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50">
+                {sliderLoading ? 'CALIBRATING...' : 'ANALYZE SAMPLE'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Locked iPad Overlay */}
+      {showIpadPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
+            <button onClick={() => { setShowIpadPuzzle(false); setIpadMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">iPad Security</h3>
+            {ipadMessage && <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${ipadMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>{ipadMessage.text}</div>}
+            <form onSubmit={handleIpadSubmit}>
+              <div className="flex justify-center gap-3 mb-8">
+                {ipadCodeArr.map((digit, index) => (
+                  <input key={index} id={`ipad-input-${index}`} type="text" maxLength={1} value={digit} onChange={(e) => handleIpadChange(index, e.target.value)} className="w-14 h-16 bg-black border-2 border-zinc-700 rounded-lg text-center text-white text-3xl font-bold focus:border-blue-500 outline-none transition-colors font-mono shadow-inner" />
+                ))}
+              </div>
+              <button type="submit" disabled={ipadLoading} className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50">
+                {ipadLoading ? 'UNLOCKING...' : 'ENTER PASSCODE'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Component-D Box 4-Digit Lock Overlay */}
+      {showBoxDPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
+            <button onClick={() => { setShowBoxDPuzzle(false); setBoxDMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center">Enter Passcode</h3>
+            {boxDMessage && <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${boxDMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>{boxDMessage.text}</div>}
+            <form onSubmit={handleBoxDSubmit}>
+              <div className="flex justify-center gap-3 mb-8">
+                {boxDCodeArr.map((digit, index) => (
+                  <input key={index} id={`box-d-input-${index}`} type="text" maxLength={1} value={digit} onChange={(e) => handleBoxDChange(index, e.target.value)} className="w-14 h-16 bg-black border-2 border-zinc-700 rounded-lg text-center text-white text-3xl font-bold focus:border-red-500 outline-none transition-colors font-mono shadow-inner" />
+                ))}
+              </div>
+              <button type="submit" disabled={boxDLoading} className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50">
+                {boxDLoading ? 'DECRYPTING...' : 'UNLOCK BOX'}
+              </button>
+            </form>
           </div>
         </div>
       )}
