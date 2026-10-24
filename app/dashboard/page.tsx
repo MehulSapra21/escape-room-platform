@@ -109,6 +109,9 @@ export default function DashboardPage() {
   const [codeLoading, setCodeLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
 
+  // Global Timer State (Static)
+  const [timeLeft] = useState<number>(900); // 15 minutes static
+
   // Inventory Interaction State
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [examineImage, setExamineImage] = useState<string | null>(null);
@@ -243,6 +246,12 @@ export default function DashboardPage() {
 
     return () => clearInterval(syncInterval);
   }, [router]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('team_id');
@@ -1125,16 +1134,119 @@ export default function DashboardPage() {
           </h1>
           <p className="text-xs text-zinc-500 font-mono">TEAM: {team.team_login_id}</p>
         </div>
-        <button onClick={handleLogout} className="text-zinc-500 hover:text-white transition-colors pointer-events-auto">
-          <LogOut className="w-5 h-5" />
-        </button>
+        <div className="text-right flex items-center gap-4">
+          <button 
+            onClick={handleLogout}
+            className="text-zinc-500 hover:text-white transition-colors pointer-events-auto"
+            title="Disconnect Terminal"
+          >
+            <LogOut className="w-5 h-5" />
+          </button>
+          {isFinalRoom ? (
+            <FlaskConical className="text-blue-500 w-5 h-5 animate-pulse" />
+          ) : (
+            <ShieldAlert className="text-red-600 w-5 h-5" />
+          )}
+        </div>
       </header>
 
       {/* DYNAMIC ROOM RENDERING */}
-      {team.current_room === 'HOSPITAL' && <HospitalUI team={team} roomCode={roomCode} setRoomCode={setRoomCode} handleCodeSubmit={handleCodeSubmit} codeLoading={codeLoading} message={message} inventorySlots={inventorySlots} currentInventory={currentInventory} ITEM_IMAGES={ITEM_IMAGES} setSelectedItem={setSelectedItem} />}
-      {team.current_room === 'PHARMACY' && <PharmacyUI team={team} roomCode={roomCode} setRoomCode={setRoomCode} handleCodeSubmit={handleCodeSubmit} codeLoading={codeLoading} message={message} inventorySlots={inventorySlots} currentInventory={currentInventory} ITEM_IMAGES={ITEM_IMAGES} setSelectedItem={setSelectedItem} />}
-      {team.current_room === 'MILITARY BASE' && <MilitaryBaseUI team={team} roomCode={roomCode} setRoomCode={setRoomCode} handleCodeSubmit={handleCodeSubmit} codeLoading={codeLoading} message={message} inventorySlots={inventorySlots} currentInventory={currentInventory} ITEM_IMAGES={ITEM_IMAGES} setSelectedItem={setSelectedItem} />}
-      {team.current_room === 'SCIENTIST LAB' && <ScientistLabUI team={team} roomCode={roomCode} setRoomCode={setRoomCode} handleCodeSubmit={handleCodeSubmit} codeLoading={codeLoading} message={message} inventorySlots={inventorySlots} currentInventory={currentInventory} ITEM_IMAGES={ITEM_IMAGES} setSelectedItem={setSelectedItem} />}
+      {team.current_room === 'HOSPITAL' ? <HospitalUI team={team} roomCode={roomCode} setRoomCode={setRoomCode} handleCodeSubmit={handleCodeSubmit} codeLoading={codeLoading} message={message} inventorySlots={inventorySlots} currentInventory={currentInventory} ITEM_IMAGES={ITEM_IMAGES} setSelectedItem={setSelectedItem} /> :
+       team.current_room === 'PHARMACY' ? <PharmacyUI team={team} roomCode={roomCode} setRoomCode={setRoomCode} handleCodeSubmit={handleCodeSubmit} codeLoading={codeLoading} message={message} inventorySlots={inventorySlots} currentInventory={currentInventory} ITEM_IMAGES={ITEM_IMAGES} setSelectedItem={setSelectedItem} /> :
+       team.current_room === 'MILITARY BASE' ? <MilitaryBaseUI team={team} roomCode={roomCode} setRoomCode={setRoomCode} handleCodeSubmit={handleCodeSubmit} codeLoading={codeLoading} message={message} inventorySlots={inventorySlots} currentInventory={currentInventory} ITEM_IMAGES={ITEM_IMAGES} setSelectedItem={setSelectedItem} /> :
+       team.current_room === 'SCIENTIST LAB' ? <ScientistLabUI team={team} roomCode={roomCode} setRoomCode={setRoomCode} handleCodeSubmit={handleCodeSubmit} codeLoading={codeLoading} message={message} inventorySlots={inventorySlots} currentInventory={currentInventory} ITEM_IMAGES={ITEM_IMAGES} setSelectedItem={setSelectedItem} /> :
+        (
+        <>
+          {/* STANDARD UI FOR ALL OTHER ROOMS */}
+          <div className={`border rounded-xl p-6 shadow-2xl mb-8 relative overflow-hidden ${isFinalRoom ? 'bg-blue-950/20 border-blue-900/50' : 'bg-zinc-900 border-zinc-700'}`}>
+            <div className={`absolute top-0 left-0 w-1 h-full ${isFinalRoom ? 'bg-blue-500' : 'bg-yellow-500'}`}></div>
+            <h2 className="text-xs text-zinc-400 mb-2 tracking-widest font-semibold uppercase">Current Location Target</h2>
+            <p className={`text-3xl font-black tracking-wider uppercase mb-3 ${isFinalRoom ? 'text-blue-400' : 'text-white'}`}>
+              {team.current_room}
+            </p>
+            <p className="text-sm text-zinc-400">
+              {isFinalRoom 
+                ? "You have gathered all critical components. Proceed to the lab immediately to synthesize the final antidote." 
+                : "Infiltrate this sector. Search for items and extract the critical component code to proceed."}
+            </p>
+          </div>
+
+          {!isFinalRoom && (
+            <div className="mb-8">
+              <form onSubmit={handleCodeSubmit} className="flex gap-2">
+                <div className="relative flex-1">
+                  <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                  <input 
+                    type="text" 
+                    value={roomCode}
+                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                    placeholder="TYPE CODE"
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg py-4 pl-12 pr-4 text-white focus:outline-none focus:border-red-600 transition-colors uppercase font-mono tracking-widest text-sm"
+                    required
+                  />
+                </div>
+                <button 
+                  type="submit" 
+                  disabled={codeLoading}
+                  className="bg-red-700 hover:bg-red-600 text-white font-bold px-6 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {codeLoading ? '...' : 'ADD ITEM'}
+                </button>
+              </form>
+              {message && (
+                <p className={`mt-3 text-xs font-mono tracking-wide ${message.type === 'error' ? 'text-red-500' : 'text-green-500'}`}>
+                  {message.text}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div>
+            <h2 className="text-3xl font-black text-blue-500 mb-4 tracking-wider uppercase">INVENTORY</h2>
+            <div className="grid grid-cols-4 gap-3">
+              {inventorySlots.map((_, index) => {
+                const item = currentInventory[index];
+                const hasImage = item && ITEM_IMAGES[item];
+
+                return (
+                  <button 
+                    key={index} 
+                    onClick={() => item && setSelectedItem(item)}
+                    disabled={!item}
+                    className={`aspect-square rounded-lg border-2 flex flex-col items-center justify-center p-1 text-center transition-all duration-500 overflow-hidden outline-none ${
+                      item 
+                        ? 'bg-zinc-800/80 border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.35)] scale-100 hover:scale-105 cursor-pointer' 
+                        : 'bg-black border-blue-800/60 scale-95 cursor-default'
+                    }`}
+                  >
+                    {item ? (
+                      hasImage ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img 
+                          src={ITEM_IMAGES[item]} 
+                          alt={item} 
+                          className="w-full h-full object-contain rounded-md"
+                        />
+                      ) : (
+                        <>
+                          <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center mb-1">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+                          </div>
+                          <span className="text-[9px] font-bold text-blue-400 tracking-wider uppercase truncate w-full px-1">
+                            {item}
+                          </span>
+                        </>
+                      )
+                    ) : (
+                      <span className="text-[10px] text-zinc-800 font-mono">EMPTY</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Item Interaction Menu Overlay */}
       {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && !showBoxAPuzzle && !showIVBagPuzzle && !showBloodPuzzle && !showSerumPuzzle && !showCardsPuzzle && !showChartPuzzle && !showSliderPuzzle && !showIpadPuzzle && !showBoxDPuzzle && (
@@ -1506,6 +1618,228 @@ export default function DashboardPage() {
                 CONFIRM PLACEMENT
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* IV Bag Puzzle Overlay */}
+      {showIVBagPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-md rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowIVBagPuzzle(false); setIvBagMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center px-8">Arrange IV Bags</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Arrange patient bags by order of admission.</p>
+            
+            {ivBagMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${ivBagMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {ivBagMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleIVBagSubmit}>
+              <div className="flex justify-between gap-2 mb-8">
+                {['1st', '2nd', '3rd', '4th'].map((label, index) => (
+                  <div key={index} className="flex-1 flex flex-col gap-2">
+                    <label className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center">{label}</label>
+                    <select 
+                      value={ivBagAnswers[index]}
+                      onChange={(e) => {
+                        const newAns = [...ivBagAnswers];
+                        newAns[index] = e.target.value;
+                        setIvBagAnswers(newAns);
+                      }}
+                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-center font-bold"
+                      required
+                    >
+                      <option value="" disabled>-</option>
+                      {['A', 'B', 'C', 'D'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              
+              <button 
+                type="submit" 
+                disabled={ivBagLoading}
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {ivBagLoading ? 'VERIFYING...' : 'VERIFY SEQUENCE'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Hospital Symptom Cards Puzzle */}
+      {showCardsPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-md rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowCardsPuzzle(false); setCardsMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center px-8">Arrange Symptom Cards</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Arrange the colored cards by urgency time.</p>
+            
+            {cardsMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${cardsMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {cardsMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleCardsSubmit}>
+              <div className="flex justify-between gap-2 mb-8">
+                {['1st', '2nd', '3rd', '4th'].map((label, index) => (
+                  <div key={index} className="flex-1 flex flex-col gap-2">
+                    <label className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center">{label}</label>
+                    <select 
+                      value={cardsAnswers[index]} 
+                      onChange={(e) => { 
+                        const newAns = [...cardsAnswers]; 
+                        newAns[index] = e.target.value; 
+                        setCardsAnswers(newAns); 
+                      }}
+                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-center font-bold" 
+                      required
+                    >
+                      <option value="" disabled>-</option>
+                      {['B', 'G', 'R', 'Y'].map(opt => (
+                        <option key={opt} value={opt}>
+                          {opt === 'B' ? 'Blue' : opt === 'G' ? 'Green' : opt === 'R' ? 'Red' : 'Yellow'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={cardsLoading} 
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {cardsLoading ? 'VERIFYING...' : 'VERIFY SEQUENCE'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Hospital Test Tube Blood Puzzle */}
+      {showBloodPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowBloodPuzzle(false); setBloodMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center px-8">Analyze Blood</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Select the two infected blood types to initiate synthesis.</p>
+            
+            {bloodMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${bloodMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {bloodMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleBloodSubmit}>
+              <div className="flex flex-col gap-4 mb-8">
+                {[0, 1].map(idx => (
+                  <select 
+                    key={idx} 
+                    value={bloodAnswers[idx]} 
+                    onChange={(e) => { 
+                      const newAns = [...bloodAnswers]; 
+                      newAns[idx] = e.target.value; 
+                      setBloodAnswers(newAns); 
+                    }}
+                    className="w-full bg-black border border-zinc-700 rounded-lg p-4 text-white focus:border-blue-500 outline-none font-bold" 
+                    required
+                  >
+                    <option value="" disabled>Select Blood Sample {idx + 1}</option>
+                    {BLOOD_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                  </select>
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={bloodLoading} 
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {bloodLoading ? 'SYNTHESIZING...' : 'BEGIN SYNTHESIS'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Hospital RE2 Serum Puzzle */}
+      {showSerumPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowSerumPuzzle(false); setSerumMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-green-500 mb-2 uppercase tracking-widest text-center px-8">Fluid Transfer</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Transfer serum between cartridges to reach exactly <strong className="text-white">4 ml</strong>.</p>
+            
+            {serumMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${serumMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {serumMessage.text}
+              </div>
+            )}
+            
+            <div className="flex justify-center gap-6 mb-8 pt-4">
+              {[0, 1, 2].map((idx) => (
+                <div key={idx} className="flex-1 flex flex-col items-center">
+                  <div className="text-zinc-500 font-mono text-xs mb-2 font-bold">MAX: {TUBE_CAPACITIES[idx]}</div>
+                  <div className="w-16 h-48 bg-zinc-950 border-2 border-zinc-700 rounded-b-xl relative overflow-hidden flex items-end shadow-inner">
+                    <div 
+                      className="w-full bg-green-500/80 transition-all duration-500 ease-in-out" 
+                      style={{ height: `${(serumTubes[idx] / TUBE_CAPACITIES[idx]) * 100}%` }} 
+                    />
+                    {idx === 0 && <div className="absolute w-full border-t-[3px] border-red-600 z-10 opacity-80" style={{ bottom: '50%' }} />}
+                  </div>
+                  <div className="text-white font-black text-lg mt-3 bg-black px-4 py-1 rounded border border-zinc-800">
+                    {serumTubes[idx]}
+                  </div>
+                  <div className="flex flex-col gap-2 mt-4 w-full">
+                     {[0, 1, 2].map(targetIdx => (
+                        targetIdx !== idx && (
+                           <button 
+                             key={targetIdx} 
+                             onClick={() => handleSerumPour(idx, targetIdx)}
+                             disabled={serumTubes[idx] === 0 || serumTubes[targetIdx] === TUBE_CAPACITIES[targetIdx] || serumLoading}
+                             className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded-lg text-xs font-bold tracking-widest disabled:opacity-30 disabled:hover:bg-zinc-800 transition-colors"
+                           >
+                             POUR TO {targetIdx + 1}
+                           </button>
+                        )
+                     ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {serumLoading && (
+              <div className="text-center font-mono text-xs text-green-500 animate-pulse tracking-widest">
+                ANALYZING VOLUME...
+              </div>
+            )}
           </div>
         </div>
       )}
