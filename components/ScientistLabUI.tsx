@@ -45,14 +45,14 @@ export default function ScientistLabUI({
         <h3 className="text-[10px] text-zinc-500 tracking-[0.2em] uppercase mb-2 ml-1 flex items-center gap-2">
           <ScanLine className="w-3 h-3 text-red-500" /> Evidence Log Terminal
         </h3>
-        <form onSubmit={handleCodeSubmit} className="flex gap-2">
+        <form onSubmit={handleCodeSubmit} className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-600" />
             <input 
               type="text" 
               value={roomCode}
               onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-              placeholder="ENTER EVIDENCE TAG CODE"
+              placeholder="ENTER ITEM CODE"
               className="w-full bg-zinc-950 border border-zinc-800 rounded-lg py-4 pl-12 pr-4 text-red-100 focus:outline-none focus:border-red-600 transition-colors uppercase font-mono tracking-widest text-sm shadow-[inset_0_0_20px_rgba(0,0,0,0.8)]"
               required
             />
@@ -60,7 +60,7 @@ export default function ScientistLabUI({
           <button 
             type="submit" 
             disabled={codeLoading}
-            className="bg-red-900 hover:bg-red-800 border border-red-700 text-white font-bold px-6 rounded-lg transition-colors disabled:opacity-50 tracking-widest font-mono text-sm shadow-[0_0_15px_rgba(153,27,27,0.4)]"
+            className="bg-red-900 hover:bg-red-800 border border-red-700 text-white font-bold py-4 sm:py-0 px-6 rounded-lg transition-colors disabled:opacity-50 tracking-widest font-mono text-sm shadow-[0_0_15px_rgba(153,27,27,0.4)]"
           >
             {codeLoading ? 'LOGGING...' : 'LOG ITEM'}
           </button>

@@ -1225,8 +1225,8 @@ export default function DashboardPage() {
 
       {/* Item Interaction Menu Overlay */}
       {selectedItem && !examineImage && !showPosterPuzzle && !showBoxPuzzle && !showChessPuzzle && !showBoxBPuzzle && !showBoxAPuzzle && !showIVBagPuzzle && !showBloodPuzzle && !showSerumPuzzle && !showCardsPuzzle && !showChartPuzzle && !showSliderPuzzle && !showIpadPuzzle && !showBoxDPuzzle && (
-        <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in">
+        <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm sm:p-4">
+          <div className="bg-zinc-900 border-t border-zinc-700 sm:border w-full max-w-sm rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-10 fade-in sm:zoom-in pb-safe">
             <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950">
               <h3 className="font-black text-blue-500 tracking-wider uppercase">{selectedItem}</h3>
               <button onClick={closeMenu} className="text-zinc-500 hover:text-white transition-colors">
@@ -1271,10 +1271,10 @@ export default function DashboardPage() {
       {showChartPuzzle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in my-auto">
-            <button onClick={() => { setShowChartPuzzle(false); setChartMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+            <button onClick={() => { setShowChartPuzzle(false); setChartMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10">
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">Analyze Pattern</h3>
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center px-8">Analyze Pattern</h3>
             <p className="text-xs text-zinc-400 text-center mb-6">Recreate the visual anomaly found on the chart.</p>
             {chartMessage && <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${chartMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>{chartMessage.text}</div>}
             
@@ -1304,10 +1304,10 @@ export default function DashboardPage() {
       {showSliderPuzzle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in my-auto">
-            <button onClick={() => { setShowSliderPuzzle(false); setSliderMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+            <button onClick={() => { setShowSliderPuzzle(false); setSliderMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10">
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-xl font-black text-green-500 mb-6 uppercase tracking-widest text-center">Calibrate Spectrometer</h3>
+            <h3 className="text-xl font-black text-green-500 mb-6 uppercase tracking-widest text-center px-8">Calibrate Spectrometer</h3>
             <p className="text-xs text-zinc-400 text-center mb-6">Adjust parameters to match the chemical signature.</p>
             {sliderMessage && <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${sliderMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>{sliderMessage.text}</div>}
             
@@ -1343,10 +1343,10 @@ export default function DashboardPage() {
       {showIpadPuzzle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
-            <button onClick={() => { setShowIpadPuzzle(false); setIpadMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+            <button onClick={() => { setShowIpadPuzzle(false); setIpadMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10">
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">iPad Security</h3>
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center px-8">iPad Security</h3>
             {ipadMessage && <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${ipadMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>{ipadMessage.text}</div>}
             <form onSubmit={handleIpadSubmit}>
               <div className="flex justify-center gap-3 mb-8">
@@ -1366,10 +1366,10 @@ export default function DashboardPage() {
       {showBoxDPuzzle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
-            <button onClick={() => { setShowBoxDPuzzle(false); setBoxDMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+            <button onClick={() => { setShowBoxDPuzzle(false); setBoxDMessage(null); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10">
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center">Enter Passcode</h3>
+            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center px-8">Enter Passcode</h3>
             {boxDMessage && <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${boxDMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>{boxDMessage.text}</div>}
             <form onSubmit={handleBoxDSubmit}>
               <div className="flex justify-center gap-3 mb-8">
@@ -1385,330 +1385,18 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Hospital Symptom Cards Puzzle */}
-      {showCardsPuzzle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-md rounded-2xl p-6 relative animate-in zoom-in my-auto">
-            <button 
-              onClick={() => { setShowCardsPuzzle(false); setCardsMessage(null); }} 
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">Arrange Symptom Cards</h3>
-            <p className="text-xs text-zinc-400 text-center mb-6">Arrange the colored cards by urgency time.</p>
-            
-            {cardsMessage && (
-              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${cardsMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
-                {cardsMessage.text}
-              </div>
-            )}
-            
-            <form onSubmit={handleCardsSubmit}>
-              <div className="flex justify-between gap-2 mb-8">
-                {['1st', '2nd', '3rd', '4th'].map((label, index) => (
-                  <div key={index} className="flex-1 flex flex-col gap-2">
-                    <label className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center">{label}</label>
-                    <select 
-                      value={cardsAnswers[index]} 
-                      onChange={(e) => { 
-                        const newAns = [...cardsAnswers]; 
-                        newAns[index] = e.target.value; 
-                        setCardsAnswers(newAns); 
-                      }}
-                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-center font-bold" 
-                      required
-                    >
-                      <option value="" disabled>-</option>
-                      {['B', 'G', 'R', 'Y'].map(opt => (
-                        <option key={opt} value={opt}>
-                          {opt === 'B' ? 'Blue' : opt === 'G' ? 'Green' : opt === 'R' ? 'Red' : 'Yellow'}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-              </div>
-              <button 
-                type="submit" 
-                disabled={cardsLoading} 
-                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
-              >
-                {cardsLoading ? 'VERIFYING...' : 'VERIFY SEQUENCE'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Hospital Test Tube Blood Puzzle */}
-      {showBloodPuzzle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in my-auto">
-            <button 
-              onClick={() => { setShowBloodPuzzle(false); setBloodMessage(null); }} 
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">Analyze Blood</h3>
-            <p className="text-xs text-zinc-400 text-center mb-6">Select the two infected blood types to initiate synthesis.</p>
-            
-            {bloodMessage && (
-              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${bloodMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
-                {bloodMessage.text}
-              </div>
-            )}
-            
-            <form onSubmit={handleBloodSubmit}>
-              <div className="flex flex-col gap-4 mb-8">
-                {[0, 1].map(idx => (
-                  <select 
-                    key={idx} 
-                    value={bloodAnswers[idx]} 
-                    onChange={(e) => { 
-                      const newAns = [...bloodAnswers]; 
-                      newAns[idx] = e.target.value; 
-                      setBloodAnswers(newAns); 
-                    }}
-                    className="w-full bg-black border border-zinc-700 rounded-lg p-4 text-white focus:border-blue-500 outline-none font-bold" 
-                    required
-                  >
-                    <option value="" disabled>Select Blood Sample {idx + 1}</option>
-                    {BLOOD_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-                  </select>
-                ))}
-              </div>
-              <button 
-                type="submit" 
-                disabled={bloodLoading} 
-                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
-              >
-                {bloodLoading ? 'SYNTHESIZING...' : 'BEGIN SYNTHESIS'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Hospital RE2 Serum Puzzle */}
-      {showSerumPuzzle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-2xl p-6 relative animate-in zoom-in my-auto">
-            <button 
-              onClick={() => { setShowSerumPuzzle(false); setSerumMessage(null); }} 
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <h3 className="text-xl font-black text-green-500 mb-2 uppercase tracking-widest text-center">Fluid Transfer</h3>
-            <p className="text-xs text-zinc-400 text-center mb-6">Transfer serum between cartridges to reach exactly <strong className="text-white">4 ml</strong>.</p>
-            
-            {serumMessage && (
-              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${serumMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
-                {serumMessage.text}
-              </div>
-            )}
-            
-            <div className="flex justify-center gap-6 mb-8 pt-4">
-              {[0, 1, 2].map((idx) => (
-                <div key={idx} className="flex-1 flex flex-col items-center">
-                  <div className="text-zinc-500 font-mono text-xs mb-2 font-bold">MAX: {TUBE_CAPACITIES[idx]}</div>
-                  <div className="w-16 h-48 bg-zinc-950 border-2 border-zinc-700 rounded-b-xl relative overflow-hidden flex items-end shadow-inner">
-                    <div 
-                      className="w-full bg-green-500/80 transition-all duration-500 ease-in-out" 
-                      style={{ height: `${(serumTubes[idx] / TUBE_CAPACITIES[idx]) * 100}%` }} 
-                    />
-                    {idx === 0 && <div className="absolute w-full border-t-[3px] border-red-600 z-10 opacity-80" style={{ bottom: '50%' }} />}
-                  </div>
-                  <div className="text-white font-black text-lg mt-3 bg-black px-4 py-1 rounded border border-zinc-800">
-                    {serumTubes[idx]}
-                  </div>
-                  <div className="flex flex-col gap-2 mt-4 w-full">
-                     {[0, 1, 2].map(targetIdx => (
-                        targetIdx !== idx && (
-                           <button 
-                             key={targetIdx} 
-                             onClick={() => handleSerumPour(idx, targetIdx)}
-                             disabled={serumTubes[idx] === 0 || serumTubes[targetIdx] === TUBE_CAPACITIES[targetIdx] || serumLoading}
-                             className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded-lg text-xs font-bold tracking-widest disabled:opacity-30 disabled:hover:bg-zinc-800 transition-colors"
-                           >
-                             POUR TO {targetIdx + 1}
-                           </button>
-                        )
-                     ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-            {serumLoading && (
-              <div className="text-center font-mono text-xs text-green-500 animate-pulse tracking-widest">
-                ANALYZING VOLUME...
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* IV Bag Puzzle Overlay */}
-      {showIVBagPuzzle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-md rounded-2xl p-6 relative animate-in zoom-in my-auto">
-            <button 
-              onClick={() => { setShowIVBagPuzzle(false); setIvBagMessage(null); }} 
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">Arrange IV Bags</h3>
-            <p className="text-xs text-zinc-400 text-center mb-6">Arrange patient bags by order of admission.</p>
-            
-            {ivBagMessage && (
-              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${ivBagMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
-                {ivBagMessage.text}
-              </div>
-            )}
-            
-            <form onSubmit={handleIVBagSubmit}>
-              <div className="flex justify-between gap-2 mb-8">
-                {['1st', '2nd', '3rd', '4th'].map((label, index) => (
-                  <div key={index} className="flex-1 flex flex-col gap-2">
-                    <label className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center">{label}</label>
-                    <select 
-                      value={ivBagAnswers[index]}
-                      onChange={(e) => {
-                        const newAns = [...ivBagAnswers];
-                        newAns[index] = e.target.value;
-                        setIvBagAnswers(newAns);
-                      }}
-                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-center font-bold"
-                      required
-                    >
-                      <option value="" disabled>-</option>
-                      {['A', 'B', 'C', 'D'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                  </div>
-                ))}
-              </div>
-              
-              <button 
-                type="submit" 
-                disabled={ivBagLoading}
-                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
-              >
-                {ivBagLoading ? 'VERIFYING...' : 'VERIFY SEQUENCE'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Component-A Box 4-Digit Lock Overlay */}
-      {showBoxAPuzzle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
-          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
-            <button 
-              onClick={() => { setShowBoxAPuzzle(false); setBoxAMessage(null); }} 
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center">Enter Passcode</h3>
-            
-            {boxAMessage && (
-              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${boxAMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
-                {boxAMessage.text}
-              </div>
-            )}
-            
-            <form onSubmit={handleBoxASubmit}>
-              <div className="flex justify-center gap-3 mb-8">
-                {boxACodeArr.map((digit, index) => (
-                  <input 
-                    key={index}
-                    id={`box-a-input-${index}`}
-                    type="text" 
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleBoxAChange(index, e.target.value)}
-                    className="w-14 h-16 bg-black border-2 border-zinc-700 rounded-lg text-center text-white text-3xl font-bold focus:border-red-500 outline-none transition-colors font-mono shadow-inner"
-                  />
-                ))}
-              </div>
-              <button 
-                type="submit" 
-                disabled={boxALoading}
-                className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
-              >
-                {boxALoading ? 'DECRYPTING...' : 'UNLOCK BOX'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Component-B Box 4-Digit Lock Overlay */}
-      {showBoxBPuzzle && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
-          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
-            <button 
-              onClick={() => { setShowBoxBPuzzle(false); setBoxBMessage(null); }} 
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            
-            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center">Enter Passcode</h3>
-            
-            {boxBMessage && (
-              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${boxBMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
-                {boxBMessage.text}
-              </div>
-            )}
-            
-            <form onSubmit={handleBoxBSubmit}>
-              <div className="flex justify-center gap-3 mb-8">
-                {boxBCodeArr.map((digit, index) => (
-                  <input 
-                    key={index}
-                    id={`box-b-input-${index}`}
-                    type="text" 
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleBoxBChange(index, e.target.value)}
-                    className="w-14 h-16 bg-black border-2 border-zinc-700 rounded-lg text-center text-white text-3xl font-bold focus:border-red-500 outline-none transition-colors font-mono shadow-inner"
-                  />
-                ))}
-              </div>
-              <button 
-                type="submit" 
-                disabled={boxBLoading}
-                className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
-              >
-                {boxBLoading ? 'DECRYPTING...' : 'UNLOCK BOX'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Component-C Box 4-Digit Lock Overlay */}
       {showBoxPuzzle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
             <button 
               onClick={() => { setShowBoxPuzzle(false); setBoxMessage(null); }} 
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
             >
               <X className="w-5 h-5" />
             </button>
             
-            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center">Enter Passcode</h3>
+            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center px-8">Enter Passcode</h3>
             
             {boxMessage && (
               <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${boxMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
@@ -1742,18 +1430,108 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Component-B Box 4-Digit Lock Overlay */}
+      {showBoxBPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
+            <button 
+              onClick={() => { setShowBoxBPuzzle(false); setBoxBMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center px-8">Enter Passcode</h3>
+            
+            {boxBMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${boxBMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {boxBMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleBoxBSubmit}>
+              <div className="flex justify-center gap-3 mb-8">
+                {boxBCodeArr.map((digit, index) => (
+                  <input 
+                    key={index}
+                    id={`box-b-input-${index}`}
+                    type="text" 
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleBoxBChange(index, e.target.value)}
+                    className="w-14 h-16 bg-black border-2 border-zinc-700 rounded-lg text-center text-white text-3xl font-bold focus:border-red-500 outline-none transition-colors font-mono shadow-inner"
+                  />
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={boxBLoading}
+                className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {boxBLoading ? 'DECRYPTING...' : 'UNLOCK BOX'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Component-A Box 4-Digit Lock Overlay */}
+      {showBoxAPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in">
+            <button 
+              onClick={() => { setShowBoxAPuzzle(false); setBoxAMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-red-500 mb-6 uppercase tracking-widest text-center px-8">Enter Passcode</h3>
+            
+            {boxAMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${boxAMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {boxAMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleBoxASubmit}>
+              <div className="flex justify-center gap-3 mb-8">
+                {boxACodeArr.map((digit, index) => (
+                  <input 
+                    key={index}
+                    id={`box-a-input-${index}`}
+                    type="text" 
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleBoxAChange(index, e.target.value)}
+                    className="w-14 h-16 bg-black border-2 border-zinc-700 rounded-lg text-center text-white text-3xl font-bold focus:border-red-500 outline-none transition-colors font-mono shadow-inner"
+                  />
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={boxALoading}
+                className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {boxALoading ? 'DECRYPTING...' : 'UNLOCK BOX'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Chess Plug Puzzle Overlay */}
       {showChessPuzzle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-2xl p-6 relative animate-in zoom-in my-auto">
             <button 
               onClick={() => { setShowChessPuzzle(false); setChessMessage(null); }} 
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
             >
               <X className="w-5 h-5" />
             </button>
             
-            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center">Assign Plugs</h3>
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center px-8">Assign Plugs</h3>
             
             {chessMessage && (
               <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${chessMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
@@ -1819,18 +1597,240 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* IV Bag Puzzle Overlay */}
+      {showIVBagPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-md rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowIVBagPuzzle(false); setIvBagMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center px-8">Arrange IV Bags</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Arrange patient bags by order of admission.</p>
+            
+            {ivBagMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${ivBagMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {ivBagMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleIVBagSubmit}>
+              <div className="flex justify-between gap-2 mb-8">
+                {['1st', '2nd', '3rd', '4th'].map((label, index) => (
+                  <div key={index} className="flex-1 flex flex-col gap-2">
+                    <label className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center">{label}</label>
+                    <select 
+                      value={ivBagAnswers[index]}
+                      onChange={(e) => {
+                        const newAns = [...ivBagAnswers];
+                        newAns[index] = e.target.value;
+                        setIvBagAnswers(newAns);
+                      }}
+                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-center font-bold"
+                      required
+                    >
+                      <option value="" disabled>-</option>
+                      {['A', 'B', 'C', 'D'].map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              
+              <button 
+                type="submit" 
+                disabled={ivBagLoading}
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {ivBagLoading ? 'VERIFYING...' : 'VERIFY SEQUENCE'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Hospital Symptom Cards Puzzle */}
+      {showCardsPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-md rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowCardsPuzzle(false); setCardsMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center px-8">Arrange Symptom Cards</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Arrange the colored cards by urgency time.</p>
+            
+            {cardsMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${cardsMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {cardsMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleCardsSubmit}>
+              <div className="flex justify-between gap-2 mb-8">
+                {['1st', '2nd', '3rd', '4th'].map((label, index) => (
+                  <div key={index} className="flex-1 flex flex-col gap-2">
+                    <label className="text-zinc-500 font-bold text-xs uppercase tracking-widest text-center">{label}</label>
+                    <select 
+                      value={cardsAnswers[index]} 
+                      onChange={(e) => { 
+                        const newAns = [...cardsAnswers]; 
+                        newAns[index] = e.target.value; 
+                        setCardsAnswers(newAns); 
+                      }}
+                      className="w-full bg-black border border-zinc-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-center font-bold" 
+                      required
+                    >
+                      <option value="" disabled>-</option>
+                      {['B', 'G', 'R', 'Y'].map(opt => (
+                        <option key={opt} value={opt}>
+                          {opt === 'B' ? 'Blue' : opt === 'G' ? 'Green' : opt === 'R' ? 'Red' : 'Yellow'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={cardsLoading} 
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {cardsLoading ? 'VERIFYING...' : 'VERIFY SEQUENCE'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Hospital Test Tube Blood Puzzle */}
+      {showBloodPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-sm rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowBloodPuzzle(false); setBloodMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center px-8">Analyze Blood</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Select the two infected blood types to initiate synthesis.</p>
+            
+            {bloodMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${bloodMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {bloodMessage.text}
+              </div>
+            )}
+            
+            <form onSubmit={handleBloodSubmit}>
+              <div className="flex flex-col gap-4 mb-8">
+                {[0, 1].map(idx => (
+                  <select 
+                    key={idx} 
+                    value={bloodAnswers[idx]} 
+                    onChange={(e) => { 
+                      const newAns = [...bloodAnswers]; 
+                      newAns[idx] = e.target.value; 
+                      setBloodAnswers(newAns); 
+                    }}
+                    className="w-full bg-black border border-zinc-700 rounded-lg p-4 text-white focus:border-blue-500 outline-none font-bold" 
+                    required
+                  >
+                    <option value="" disabled>Select Blood Sample {idx + 1}</option>
+                    {BLOOD_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                  </select>
+                ))}
+              </div>
+              <button 
+                type="submit" 
+                disabled={bloodLoading} 
+                className="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-colors tracking-widest disabled:opacity-50"
+              >
+                {bloodLoading ? 'SYNTHESIZING...' : 'BEGIN SYNTHESIS'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Hospital RE2 Serum Puzzle */}
+      {showSerumPuzzle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-2xl p-6 relative animate-in zoom-in my-auto">
+            <button 
+              onClick={() => { setShowSerumPuzzle(false); setSerumMessage(null); }} 
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <h3 className="text-xl font-black text-green-500 mb-2 uppercase tracking-widest text-center px-8">Fluid Transfer</h3>
+            <p className="text-xs text-zinc-400 text-center mb-6">Transfer serum between cartridges to reach exactly <strong className="text-white">4 ml</strong>.</p>
+            
+            {serumMessage && (
+              <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed text-center ${serumMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
+                {serumMessage.text}
+              </div>
+            )}
+            
+            <div className="flex justify-center gap-6 mb-8 pt-4">
+              {[0, 1, 2].map((idx) => (
+                <div key={idx} className="flex-1 flex flex-col items-center">
+                  <div className="text-zinc-500 font-mono text-xs mb-2 font-bold">MAX: {TUBE_CAPACITIES[idx]}</div>
+                  <div className="w-16 h-48 bg-zinc-950 border-2 border-zinc-700 rounded-b-xl relative overflow-hidden flex items-end shadow-inner">
+                    <div 
+                      className="w-full bg-green-500/80 transition-all duration-500 ease-in-out" 
+                      style={{ height: `${(serumTubes[idx] / TUBE_CAPACITIES[idx]) * 100}%` }} 
+                    />
+                    {idx === 0 && <div className="absolute w-full border-t-[3px] border-red-600 z-10 opacity-80" style={{ bottom: '50%' }} />}
+                  </div>
+                  <div className="text-white font-black text-lg mt-3 bg-black px-4 py-1 rounded border border-zinc-800">
+                    {serumTubes[idx]}
+                  </div>
+                  <div className="flex flex-col gap-2 mt-4 w-full">
+                     {[0, 1, 2].map(targetIdx => (
+                        targetIdx !== idx && (
+                           <button 
+                             key={targetIdx} 
+                             onClick={() => handleSerumPour(idx, targetIdx)}
+                             disabled={serumTubes[idx] === 0 || serumTubes[targetIdx] === TUBE_CAPACITIES[targetIdx] || serumLoading}
+                             className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded-lg text-xs font-bold tracking-widest disabled:opacity-30 disabled:hover:bg-zinc-800 transition-colors"
+                           >
+                             POUR TO {targetIdx + 1}
+                           </button>
+                        )
+                     ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {serumLoading && (
+              <div className="text-center font-mono text-xs text-green-500 animate-pulse tracking-widest">
+                ANALYZING VOLUME...
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Poster Puzzle Form Overlay */}
       {showPosterPuzzle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 overflow-y-auto">
           <div className="bg-zinc-900 border border-zinc-700 w-full max-w-lg rounded-2xl p-6 relative animate-in zoom-in my-auto mt-20 sm:mt-auto">
             <button 
               onClick={() => { setShowPosterPuzzle(false); setPosterMessage(null); }} 
-              className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+              className="absolute top-4 right-4 text-zinc-500 hover:text-white z-10"
             >
               <X className="w-5 h-5" />
             </button>
             
-            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest">Analyze Image Parts</h3>
+            <h3 className="text-xl font-black text-blue-500 mb-6 uppercase tracking-widest text-center px-8">Analyze Image Parts</h3>
             
             {posterMessage && (
               <div className={`p-4 mb-6 rounded-lg font-mono text-sm leading-relaxed ${posterMessage.type === 'success' ? 'bg-green-950/50 text-green-400 border border-green-900' : 'bg-red-950/50 text-red-400 border border-red-900'}`}>
