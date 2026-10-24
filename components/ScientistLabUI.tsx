@@ -1,4 +1,3 @@
-// components/ScientistLabUI.tsx
 import { Fingerprint, Skull, AlertTriangle, FileWarning, Search } from 'lucide-react';
 
 export default function ScientistLabUI({
@@ -80,7 +79,7 @@ export default function ScientistLabUI({
           <h2 className="text-2xl font-black text-zinc-300 tracking-widest uppercase">CHAIN OF CUSTODY</h2>
         </div>
         <div className="grid grid-cols-4 gap-3">
-          {inventorySlots.map((_, index) => {
+          {inventorySlots.map((_: any, index: number) => {
             const item = currentInventory[index];
             const hasImage = item && ITEM_IMAGES[item];
 
@@ -132,6 +131,7 @@ export default function ScientistLabUI({
 }
 
 // Helper icon component for the input box
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function ScanLine(props: any) {
   return (
     <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
