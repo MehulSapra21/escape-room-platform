@@ -95,7 +95,7 @@ const TUBE_CAPACITIES = [8, 5, 3];
 
 const BOX_PASSCODE = '4716';    
 const BOX_B_PASSCODE = '8250';  
-const BOX_A_PASSCODE = '3244';
+const BOX_A_PASSCODE = '3245';
 const IPAD_PASSCODE = '9158';
 const BOX_D_PASSCODE = '7355';
 
@@ -205,21 +205,7 @@ export default function DashboardPage() {
         return;
       }
 
-      if (!data.current_room) {
-        const assignedRoom = 'HOSPITAL'; // Reset to standard start
-        const { data: updatedData, error: updateError } = await supabase
-          .from('teams')
-          .update({ current_room: assignedRoom, has_started: true })
-          .eq('id', teamId)
-          .select()
-          .single();
-        
-        if (!updateError && updatedData) setTeam(updatedData);
-        else setTeam(data);
-      } else {
-        setTeam(data);
-      }
-      
+      setTeam(data);
       setLoading(false);
     };
 
@@ -246,12 +232,6 @@ export default function DashboardPage() {
 
     return () => clearInterval(syncInterval);
   }, [router]);
-
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
 
   const handleLogout = () => {
     localStorage.removeItem('team_id');
@@ -308,15 +288,15 @@ export default function DashboardPage() {
             }
           });
 
-          nextRoom = remainingRooms[0];
-          let minCount = roomCounts[nextRoom];
-          
+          let minCount = Infinity;
           for (const room of remainingRooms) {
             if (roomCounts[room] < minCount) {
               minCount = roomCounts[room];
-              nextRoom = room;
             }
           }
+
+          const leastCrowdedRooms = remainingRooms.filter(room => roomCounts[room] === minCount);
+          nextRoom = leastCrowdedRooms[Math.floor(Math.random() * leastCrowdedRooms.length)];
         }
 
         const { data: updatedTeam, error: updateError } = await supabase
@@ -838,11 +818,26 @@ export default function DashboardPage() {
 
     if (remainingRooms.length > 0) {
       const { data: allTeams } = await supabase.from('teams').select('current_room');
-      const roomCounts = remainingRooms.reduce((acc, room) => { acc[room] = 0; return acc; }, {} as Record<string, number>);
-      allTeams?.forEach((t) => { if (t.current_room && roomCounts[t.current_room] !== undefined) roomCounts[t.current_room]++; });
-      nextRoom = remainingRooms[0];
-      let minCount = roomCounts[nextRoom];
-      for (const room of remainingRooms) { if (roomCounts[room] < minCount) { minCount = roomCounts[room]; nextRoom = room; } }
+      const roomCounts = remainingRooms.reduce((acc, room) => {
+        acc[room] = 0;
+        return acc;
+      }, {} as Record<string, number>);
+
+      allTeams?.forEach((t) => {
+        if (t.current_room && roomCounts[t.current_room] !== undefined) {
+          roomCounts[t.current_room]++;
+        }
+      });
+
+      let minCount = Infinity;
+      for (const room of remainingRooms) {
+        if (roomCounts[room] < minCount) {
+          minCount = roomCounts[room];
+        }
+      }
+
+      const leastCrowdedRooms = remainingRooms.filter(room => roomCounts[room] === minCount);
+      nextRoom = leastCrowdedRooms[Math.floor(Math.random() * leastCrowdedRooms.length)];
     }
 
     const { data: updatedTeam, error: updateError } = await supabase
@@ -903,15 +898,15 @@ export default function DashboardPage() {
         }
       });
 
-      nextRoom = remainingRooms[0];
-      let minCount = roomCounts[nextRoom];
-      
+      let minCount = Infinity;
       for (const room of remainingRooms) {
         if (roomCounts[room] < minCount) {
           minCount = roomCounts[room];
-          nextRoom = room;
         }
       }
+
+      const leastCrowdedRooms = remainingRooms.filter(room => roomCounts[room] === minCount);
+      nextRoom = leastCrowdedRooms[Math.floor(Math.random() * leastCrowdedRooms.length)];
     }
 
     const { data: updatedTeam, error: updateError } = await supabase
@@ -979,15 +974,15 @@ export default function DashboardPage() {
         }
       });
 
-      nextRoom = remainingRooms[0];
-      let minCount = roomCounts[nextRoom];
-      
+      let minCount = Infinity;
       for (const room of remainingRooms) {
         if (roomCounts[room] < minCount) {
           minCount = roomCounts[room];
-          nextRoom = room;
         }
       }
+
+      const leastCrowdedRooms = remainingRooms.filter(room => roomCounts[room] === minCount);
+      nextRoom = leastCrowdedRooms[Math.floor(Math.random() * leastCrowdedRooms.length)];
     }
 
     const { data: updatedTeam, error: updateError } = await supabase
@@ -1055,15 +1050,15 @@ export default function DashboardPage() {
         }
       });
 
-      nextRoom = remainingRooms[0];
-      let minCount = roomCounts[nextRoom];
-      
+      let minCount = Infinity;
       for (const room of remainingRooms) {
         if (roomCounts[room] < minCount) {
           minCount = roomCounts[room];
-          nextRoom = room;
         }
       }
+
+      const leastCrowdedRooms = remainingRooms.filter(room => roomCounts[room] === minCount);
+      nextRoom = leastCrowdedRooms[Math.floor(Math.random() * leastCrowdedRooms.length)];
     }
 
     const { data: updatedTeam, error: updateError } = await supabase
