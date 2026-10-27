@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { Users, Activity, LogOut, Settings } from 'lucide-react';
+import { Users, Activity, LogOut, Settings, Trash2, Megaphone, AlertOctagon } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -12,8 +12,12 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<string>('');
   
-  // Track which team is currently being reset so we can show a loading state on their buttons
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  
+  // New State for Broadcast & Global Reset
+  const [broadcastMsg, setBroadcastMsg] = useState('');
+  const [broadcasting, setBroadcasting] = useState(false);
+  const [globalResetting, setGlobalResetting] = useState(false);
 
   const fetchTeams = async () => {
     const { data, error } = await supabase
@@ -47,7 +51,6 @@ export default function AdminDashboard() {
     router.push('/');
   };
 
-  // Reset: Clears inventory & room, but keeps has_started = true so they skip the video
   const handlePartialReset = async (teamId: string) => {
     if (!confirm(`Are you sure you want to PARTIAL reset ${teamId}? They will skip the video but lose all items.`)) return;
     
@@ -66,7 +69,6 @@ export default function AdminDashboard() {
     setActionLoading(null);
   };
 
-  // Reset: Clears everything, including has_started, forcing them back to standby/video
   const handlePureReset = async (teamId: string) => {
     if (!confirm(`Are you sure you want to PURE reset ${teamId}? They will start from the Standby screen.`)) return;
     
@@ -83,6 +85,55 @@ export default function AdminDashboard() {
       
     await fetchTeams();
     setActionLoading(null);
+  };
+
+  // --- NEW FEATURES ---
+
+  const handleDeleteTeam = async (teamId: string) => {
+    if (!confirm(`CRITICAL WARNING: Are you sure you want to completely DELETE team "${teamId}" from the database?`)) return;
+    
+    setActionLoading(teamId);
+    await supabase.from('teams').delete().eq('team_login_id', teamId);
+    await fetchTeams();
+    setActionLoading(null);
+  };
+
+  const handleGlobalPureReset = async () => {
+    if (!confirm("GLOBAL RESET: Are you sure? This will wipe EVERY team's progress and return them ALL to the Standby screen!")) return;
+    
+    setGlobalResetting(true);
+    // Supabase requires a filter for bulk updates, so we target all rows where team_login_id is not empty
+    await supabase
+      .from('teams')
+      .update({
+        has_started: false,
+        current_room: null,
+        inventory: [],
+        visited_rooms: [],
+        broadcast_message: null
+      })
+      .neq('team_login_id', '');
+      
+    await fetchTeams();
+    setGlobalResetting(false);
+  };
+
+  const handleBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastMsg.trim()) return;
+    
+    setBroadcasting(true);
+    // Append a hidden timestamp so consecutive identical messages still register as a change on the client
+    const payload = `${broadcastMsg.trim()} [T:${Date.now()}]`;
+    
+    await supabase
+      .from('teams')
+      .update({ broadcast_message: payload })
+      .neq('team_login_id', '');
+      
+    setBroadcastMsg('');
+    setBroadcasting(false);
+    alert('Broadcast sent to all active devices!');
   };
 
   if (loading) return <div className="min-h-screen bg-black text-white p-6">LOADING OVERSEER TERMINAL...</div>;
@@ -110,6 +161,50 @@ export default function AdminDashboard() {
           </button>
         </div>
       </header>
+
+      {/* Admin Controls Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        
+        {/* Broadcast Panel */}
+        <div className="lg:col-span-2 bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl">
+          <h2 className="text-sm font-bold text-zinc-400 tracking-widest mb-4 flex items-center gap-2">
+            <Megaphone className="w-4 h-4 text-blue-500" /> SYSTEM BROADCAST
+          </h2>
+          <form onSubmit={handleBroadcast} className="flex flex-col sm:flex-row gap-3">
+            <input 
+              type="text" 
+              value={broadcastMsg}
+              onChange={(e) => setBroadcastMsg(e.target.value)}
+              placeholder="Enter message to display on all participant screens..."
+              className="flex-1 bg-black border border-zinc-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 font-mono text-sm"
+              maxLength={100}
+            />
+            <button 
+              type="submit" 
+              disabled={broadcasting || !broadcastMsg.trim()}
+              className="bg-blue-700 hover:bg-blue-600 text-white font-bold px-8 py-3 rounded-lg transition-colors tracking-widest text-sm disabled:opacity-50 whitespace-nowrap"
+            >
+              {broadcasting ? 'TRANSMITTING...' : 'SEND BROADCAST'}
+            </button>
+          </form>
+        </div>
+
+        {/* Danger Zone Panel */}
+        <div className="bg-red-950/20 border border-red-900/50 rounded-xl p-6 shadow-xl flex flex-col justify-center items-center text-center">
+           <h2 className="text-sm font-bold text-red-500 tracking-widest mb-2 flex items-center gap-2">
+            <AlertOctagon className="w-4 h-4" /> DANGER ZONE
+          </h2>
+          <p className="text-xs text-zinc-500 mb-4 font-mono">This action affects ALL registered teams simultaneously.</p>
+          <button 
+            onClick={handleGlobalPureReset}
+            disabled={globalResetting}
+            className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 rounded-lg transition-colors tracking-widest text-sm shadow-[0_0_15px_rgba(220,38,38,0.4)] disabled:opacity-50"
+          >
+            {globalResetting ? 'PURGING SYSTEM...' : 'GLOBAL PURE RESET'}
+          </button>
+        </div>
+
+      </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl">
         <div className="overflow-x-auto">
@@ -144,7 +239,7 @@ export default function AdminDashboard() {
                   <td className="px-6 py-4 text-zinc-400 font-mono text-xs">
                     {team.inventory?.length || 0} / 8 slots filled
                   </td>
-                  <td className="px-6 py-4 flex gap-2">
+                  <td className="px-6 py-4 flex gap-2 items-center">
                     <button
                       onClick={() => handlePartialReset(team.team_login_id)}
                       disabled={actionLoading === team.team_login_id}
@@ -155,9 +250,17 @@ export default function AdminDashboard() {
                     <button
                       onClick={() => handlePureReset(team.team_login_id)}
                       disabled={actionLoading === team.team_login_id}
-                      className="bg-red-900/50 hover:bg-red-700 text-red-200 px-3 py-2 rounded text-[10px] font-bold tracking-widest transition-colors disabled:opacity-50"
+                      className="bg-amber-900/50 hover:bg-amber-700 text-amber-200 px-3 py-2 rounded text-[10px] font-bold tracking-widest transition-colors disabled:opacity-50"
                     >
                       PURE RESET
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTeam(team.team_login_id)}
+                      disabled={actionLoading === team.team_login_id}
+                      title="Delete Team"
+                      className="bg-red-900/40 hover:bg-red-700 text-red-400 hover:text-white p-2 rounded transition-colors disabled:opacity-50 ml-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </td>
                 </tr>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { ShieldAlert, Fingerprint, FlaskConical, LogOut, X, Search, Link, Trash2 } from 'lucide-react';
+import { ShieldAlert, Fingerprint, FlaskConical, LogOut, X, Search, Link, Trash2, Megaphone } from 'lucide-react';
 import ScientistLabUI from '../../components/ScientistLabUI';
 import HospitalUI from '../../components/HospitalUI';
 import PharmacyUI from '../../components/PharmacyUI';
@@ -108,6 +108,9 @@ export default function DashboardPage() {
   const [roomCode, setRoomCode] = useState('');
   const [codeLoading, setCodeLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'error' | 'success' } | null>(null);
+
+  // Broadcast Message State
+  const [activeBroadcast, setActiveBroadcast] = useState<string | null>(null);
 
   // Global Timer State (Static)
   const [timeLeft] = useState<number>(900); // 15 minutes static
@@ -217,11 +220,14 @@ export default function DashboardPage() {
 
       const { data, error } = await supabase
         .from('teams')
-        .select('has_started, current_room')
+        .select('has_started, current_room, broadcast_message')
         .eq('id', teamId)
         .single();
 
       if (!error && data) {
+        // Update local team state to catch broadcast messages without reloading the whole page
+        setTeam((prev: any) => ({ ...prev, ...data }));
+
         if (!data.has_started) {
           router.push('/standby');
         } else if (data.has_started && !data.current_room) {
@@ -232,6 +238,27 @@ export default function DashboardPage() {
 
     return () => clearInterval(syncInterval);
   }, [router]);
+
+  // Listen for Broadcast Message changes
+  useEffect(() => {
+    if (team?.broadcast_message) {
+      // Strip out the hidden timestamp tag we added in the admin panel
+      const actualMessage = team.broadcast_message.split(' [T:')[0];
+      setActiveBroadcast(actualMessage);
+      
+      const timer = setTimeout(() => {
+        setActiveBroadcast(null);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [team?.broadcast_message]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('team_id');
@@ -1106,6 +1133,19 @@ export default function DashboardPage() {
 
   return (
     <main className="min-h-screen bg-black text-white p-6 pb-24 relative overflow-x-hidden">
+      
+      {/* --- NEW: BROADCAST ALERT OVERLAY --- */}
+      {activeBroadcast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-10 fade-in duration-300 w-[90%] max-w-lg pointer-events-none">
+          <div className="bg-red-700/95 backdrop-blur-md text-white px-6 py-6 rounded-2xl shadow-[0_0_40px_rgba(220,38,38,0.8)] border-2 border-red-400 text-center flex flex-col items-center justify-center gap-3">
+            <Megaphone className="w-8 h-8 animate-bounce text-red-200" />
+            <h2 className="text-xl sm:text-2xl font-black tracking-widest uppercase drop-shadow-md">
+              {activeBroadcast}
+            </h2>
+          </div>
+        </div>
+      )}
+
       {/* Global Progress Vial & Timer Overlay */}
       <div className="absolute top-6 right-6 flex flex-col items-end z-20 pointer-events-none">
         <div className="font-mono text-2xl font-black tracking-widest mb-2 px-3 py-1 rounded border bg-black border-zinc-800 text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.3)]">
