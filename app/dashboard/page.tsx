@@ -208,7 +208,54 @@ export default function DashboardPage() {
         return;
       }
 
-      setTeam(data);
+      if (!data.current_room) {
+        // Find the least crowded initial room to load-balance after a Pure Reset
+        const { data: allTeams } = await supabase.from('teams').select('current_room');
+        const roomCounts = INITIAL_ROOMS.reduce((acc, room) => {
+          acc[room] = 0;
+          return acc;
+        }, {} as Record<string, number>);
+
+        allTeams?.forEach((t) => {
+          if (t.current_room && roomCounts[t.current_room] !== undefined) {
+            roomCounts[t.current_room]++;
+          }
+        });
+
+        let minCount = Infinity;
+        for (const room of INITIAL_ROOMS) {
+          if (roomCounts[room] < minCount) {
+            minCount = roomCounts[room];
+          }
+        }
+
+        const leastCrowdedRooms = INITIAL_ROOMS.filter(room => roomCounts[room] === minCount);
+        const assignedRoom = leastCrowdedRooms[Math.floor(Math.random() * leastCrowdedRooms.length)];
+
+        const { data: updatedData, error: updateError } = await supabase
+          .from('teams')
+          .update({ current_room: assignedRoom, has_started: true })
+          .eq('id', teamId)
+          .select()
+          .single();
+        
+        if (!updateError && updatedData) setTeam(updatedData);
+        else setTeam(data);
+      } else {
+        // If they already have a room but has_started is false, flip it to true to prevent kickout
+        if (!data.has_started) {
+          const { data: updatedData } = await supabase
+            .from('teams')
+            .update({ has_started: true })
+            .eq('id', teamId)
+            .select()
+            .single();
+          setTeam(updatedData || data);
+        } else {
+          setTeam(data);
+        }
+      }
+      
       setLoading(false);
     };
 
