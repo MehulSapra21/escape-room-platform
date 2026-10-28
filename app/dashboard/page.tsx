@@ -192,8 +192,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const initDashboard = async () => {
       const teamId = localStorage.getItem('team_id');
-      if (!teamId) {
-        router.push('/');
+      const localSession = localStorage.getItem('session_id');
+
+      if (!teamId || !localSession) {
+        handleLogout();
         return;
       }
 
@@ -204,7 +206,14 @@ export default function DashboardPage() {
         .single();
 
       if (error || !data) {
-        router.push('/');
+        handleLogout();
+        return;
+      }
+
+      // Check Session ID immediately on load
+      if (!data.active_session_id || data.active_session_id !== localSession) {
+        alert("Session Expired or Logged in from another device.");
+        handleLogout();
         return;
       }
 
@@ -263,15 +272,23 @@ export default function DashboardPage() {
 
     const syncInterval = setInterval(async () => {
       const teamId = localStorage.getItem('team_id');
+      const localSession = localStorage.getItem('session_id');
       if (!teamId) return;
 
       const { data, error } = await supabase
         .from('teams')
-        .select('has_started, current_room, broadcast_message')
+        .select('has_started, current_room, broadcast_message, active_session_id')
         .eq('id', teamId)
         .single();
 
       if (!error && data) {
+        // Verify Session ID continuously
+        if (!data.active_session_id || data.active_session_id !== localSession) {
+          alert("Session Expired or Logged in from another device.");
+          handleLogout();
+          return;
+        }
+
         // Update local team state to catch broadcast messages without reloading the whole page
         setTeam((prev: any) => ({ ...prev, ...data }));
 
@@ -310,6 +327,7 @@ export default function DashboardPage() {
   const handleLogout = () => {
     localStorage.removeItem('team_id');
     localStorage.removeItem('is_admin');
+    localStorage.removeItem('session_id'); // Clear session token
     router.push('/');
   };
 

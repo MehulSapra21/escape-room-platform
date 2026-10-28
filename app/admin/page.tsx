@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
-import { Users, Activity, LogOut, Settings, Trash2, Megaphone, AlertOctagon } from 'lucide-react';
+import { Users, Activity, LogOut, Settings, Trash2, Megaphone, AlertOctagon, Smartphone } from 'lucide-react';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -22,7 +22,7 @@ export default function AdminDashboard() {
   const fetchTeams = async () => {
     const { data, error } = await supabase
       .from('teams')
-      .select('team_login_id, current_room, has_started, inventory')
+      .select('team_login_id, current_room, has_started, inventory, active_session_id')
       .order('team_login_id', { ascending: true });
 
     if (!error && data) {
@@ -94,6 +94,15 @@ export default function AdminDashboard() {
     
     setActionLoading(teamId);
     await supabase.from('teams').delete().eq('team_login_id', teamId);
+    await fetchTeams();
+    setActionLoading(null);
+  };
+
+  const handleResetDevice = async (teamId: string) => {
+    if (!confirm(`Are you sure you want to disconnect ${teamId}'s device? They will be logged out immediately.`)) return;
+    
+    setActionLoading(teamId);
+    await supabase.from('teams').update({ active_session_id: null }).eq('team_login_id', teamId);
     await fetchTeams();
     setActionLoading(null);
   };
@@ -253,6 +262,14 @@ export default function AdminDashboard() {
                       className="bg-amber-900/50 hover:bg-amber-700 text-amber-200 px-3 py-2 rounded text-[10px] font-bold tracking-widest transition-colors disabled:opacity-50"
                     >
                       PURE RESET
+                    </button>
+                    <button
+                      onClick={() => handleResetDevice(team.team_login_id)}
+                      disabled={actionLoading === team.team_login_id}
+                      title="Reset Device Connection"
+                      className="bg-purple-900/40 hover:bg-purple-700 text-purple-300 px-3 py-2 rounded text-[10px] font-bold tracking-widest transition-colors disabled:opacity-50 ml-1"
+                    >
+                      <Smartphone className="w-3 h-3 inline mr-1" /> KICK DEVICE
                     </button>
                     <button
                       onClick={() => handleDeleteTeam(team.team_login_id)}

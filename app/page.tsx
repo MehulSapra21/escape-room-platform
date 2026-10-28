@@ -46,8 +46,18 @@ export default function LoginPage() {
       return;
     }
 
+    // --- NEW: Single Device Verification System ---
+    // Generate a unique session ID for this specific device
+    const sessionId = Math.random().toString(36).substring(2, 15);
+    localStorage.setItem('session_id', sessionId);
     localStorage.setItem('team_id', data.id);
-    
+
+    // Update the database with the new active session ID
+    await supabase
+      .from('teams')
+      .update({ active_session_id: sessionId })
+      .eq('id', data.id);
+
     if (data.has_started || data.current_room) {
       router.push('/dashboard');
     } else {
