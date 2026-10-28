@@ -94,7 +94,7 @@ const BLOOD_TYPES = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const TUBE_CAPACITIES = [8, 5, 3];
 
 const BOX_PASSCODE = '4716';    
-const BOX_B_PASSCODE = '8250';  
+const BOX_B_PASSCODE = '8437';  
 const BOX_A_PASSCODE = '3245';
 const IPAD_PASSCODE = '9158';
 const BOX_D_PASSCODE = '7355';
