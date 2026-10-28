@@ -25,7 +25,7 @@ export default function LoginPage() {
     setError(null);
 
     // 1. Check for Admin Credentials
-    if (teamId === 'admin' && password === '123') {
+    if (teamId === 'admin' && password === '2106') {
       localStorage.setItem('is_admin', 'true');
       router.push('/admin');
       setTimeout(() => setLoading(false), 500); // Clean up in background
