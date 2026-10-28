@@ -47,12 +47,22 @@ export default function LoginPage() {
     }
 
     // --- NEW: Single Device Verification System ---
-    // Generate a unique session ID for this specific device
-    const sessionId = Math.random().toString(36).substring(2, 15);
+    const localSession = localStorage.getItem('session_id');
+
+    // If the database has an active session AND it doesn't match this current device's session, BLOCK THEM.
+    if (data.active_session_id && data.active_session_id !== localSession) {
+      setError('Team is already active on another device. Ask an Overseer to reset your connection.');
+      setLoading(false);
+      return;
+    }
+
+    // If there is no active session (or they are logging back in from the exact same device), proceed.
+    // Generate a unique session ID for this specific device if they don't already have one.
+    const sessionId = localSession || Math.random().toString(36).substring(2, 15);
     localStorage.setItem('session_id', sessionId);
     localStorage.setItem('team_id', data.id);
 
-    // Update the database with the new active session ID
+    // Update the database with the active session ID
     await supabase
       .from('teams')
       .update({ active_session_id: sessionId })
