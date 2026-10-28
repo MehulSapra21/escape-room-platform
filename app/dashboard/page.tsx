@@ -318,12 +318,6 @@ export default function DashboardPage() {
     }
   }, [team?.broadcast_message]);
 
-  const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('team_id');
     localStorage.removeItem('is_admin');
@@ -1211,42 +1205,45 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Global Progress Vial & Timer Overlay */}
-      <div className="absolute top-6 right-6 flex flex-col items-end z-20 pointer-events-none">
-        <div className="font-mono text-2xl font-black tracking-widest mb-2 px-3 py-1 rounded border bg-black border-zinc-800 text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.3)]">
-          15:00
-        </div>
-        <div className="w-8 h-32 border-2 border-zinc-600 rounded-b-full rounded-t-sm relative bg-black/50 overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-end">
-          <div 
-            className="w-full bg-green-500/80 transition-all duration-1000 ease-in-out relative"
-            style={{ height: `${vialFillPercentage}%` }}
-          >
-            <div className="absolute top-0 w-full h-1 bg-green-300 opacity-50"></div>
+      <header className="flex justify-between items-start border-b border-zinc-800 pb-6 mb-6 relative z-10">
+        <div className="flex flex-col gap-4">
+          <div>
+            <h1 className="text-xl font-black text-red-600 tracking-widest flex items-center gap-2">
+               OUTBREAK OS
+            </h1>
+            <p className="text-xs text-zinc-500 font-mono">TEAM: {team.team_login_id}</p>
+          </div>
+          
+          <div className="flex items-center gap-4 mt-auto">
+            <button 
+              onClick={handleLogout}
+              className="text-zinc-500 hover:text-white transition-colors pointer-events-auto flex items-center gap-2 text-xs font-bold tracking-widest bg-zinc-900 px-3 py-2 rounded-lg border border-zinc-800"
+              title="Disconnect Terminal"
+            >
+              <LogOut className="w-4 h-4" /> LOGOUT
+            </button>
+            {isFinalRoom ? (
+              <FlaskConical className="text-blue-500 w-5 h-5 animate-pulse" />
+            ) : (
+              <ShieldAlert className="text-red-600 w-5 h-5" />
+            )}
           </div>
         </div>
-        <span className="text-[10px] text-zinc-500 font-mono mt-1 font-bold">SYNTHESIS: {vialFillPercentage}%</span>
-      </div>
 
-      <header className="flex justify-between items-center border-b border-zinc-800 pb-4 mb-6 relative z-10 pr-24">
-        <div>
-          <h1 className="text-xl font-black text-red-600 tracking-widest flex items-center gap-2">
-             OUTBREAK OS
-          </h1>
-          <p className="text-xs text-zinc-500 font-mono">TEAM: {team.team_login_id}</p>
-        </div>
-        <div className="text-right flex items-center gap-4">
-          <button 
-            onClick={handleLogout}
-            className="text-zinc-500 hover:text-white transition-colors pointer-events-auto"
-            title="Disconnect Terminal"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
-          {isFinalRoom ? (
-            <FlaskConical className="text-blue-500 w-5 h-5 animate-pulse" />
-          ) : (
-            <ShieldAlert className="text-red-600 w-5 h-5" />
-          )}
+        {/* Global Progress Vial & Timer (Now safely in the document flow) */}
+        <div className="flex flex-col items-end z-20">
+          <div className="font-mono text-2xl font-black tracking-widest mb-2 px-3 py-1 rounded border bg-black border-zinc-800 text-red-500 shadow-[0_0_10px_rgba(220,38,38,0.3)]">
+            15:00
+          </div>
+          <div className="w-8 h-24 border-2 border-zinc-600 rounded-b-full rounded-t-sm relative bg-black/50 overflow-hidden shadow-[0_0_15px_rgba(0,0,0,0.5)] flex items-end">
+            <div 
+              className="w-full bg-green-500/80 transition-all duration-1000 ease-in-out relative"
+              style={{ height: `${vialFillPercentage}%` }}
+            >
+              <div className="absolute top-0 w-full h-1 bg-green-300 opacity-50"></div>
+            </div>
+          </div>
+          <span className="text-[10px] text-zinc-500 font-mono mt-1 font-bold">SYNTHESIS: {vialFillPercentage}%</span>
         </div>
       </header>
 
